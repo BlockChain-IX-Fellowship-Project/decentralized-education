@@ -1,0 +1,52 @@
+### Create a new course with multiple sections
+POST http://localhost:5000/api/courses
+Content-Type: application/json
+
+{
+  "title": "Fullstack Web Development",
+  "description": "Learn frontend, backend, and everything in between.",
+  "contributor": "0xabc123def456",
+  "sections": [
+    {
+      "title": "Frontend Basics",
+      "videoLinks": ["https://youtu.be/frontend1"],
+      "docLinks": ["https://docs.frontend.com/basics"],
+      "quizzes": [
+        {
+          "question": "What is React?",
+          "options": ["Framework", "Library", "Language", "Tool"],
+          "correctAnswer": "Library"
+        }
+      ]
+    },
+    {
+      "title": "Backend with Node.js",
+      "videoLinks": ["https://youtu.be/backend1"],
+      "docLinks": ["https://docs.backend.com/node"],
+      "quizzes": [
+        {
+          "question": "What does Express.js do?",
+          "options": ["Database", "Frontend Library", "Routing & Middleware", "Cloud Hosting"],
+          "correctAnswer": "Routing & Middleware"
+        }
+      ]
+    }
+  ]
+}
+
+
+### GET all courses
+GET http://localhost:5000/api/courses
+
+### Submit the quiz answers for a specific course
+POST http://localhost:5000/api/quizzes/submit
+Content-Type: application/json
+
+{
+  "courseId": "6879e3d9caefd397dbb40b72",
+  "walletAddress": "0x123abc456def",
+  "userAnswers": [
+    [ "Library" ],           
+    [ "Routing & Middleware" ]
+  ]
+}
