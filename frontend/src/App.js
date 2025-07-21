@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from '
 import Dashboard from './components/Dashboard';
 import CourseForm from './components/CourseForm';
 import CourseDetails from './components/CourseDetails';
+import BrowseCourses from './components/BrowseCourses';
 
 function DashboardWrapper() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardWrapper />} />
           <Route path="/add-course" element={<CourseFormWrapper />} />
           <Route path="/course/:id" element={<CourseDetailsWrapper />} />
+          <Route path="/courses" element={<BrowseCourses />} />
         </Routes>
       </div>
     </Router>

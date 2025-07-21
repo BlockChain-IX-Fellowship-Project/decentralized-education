@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { uploadVideoToIPFS } from '../utils/uploadVideoToIPFS';
+import { createFullCourse } from '../utils/createFullCourse';
 
 export default function CourseForm({ onBack }) {
   const [sections, setSections] = useState([
@@ -10,6 +12,7 @@ export default function CourseForm({ onBack }) {
   ]);
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSectionChange = (idx, field, value) => {
     const updated = [...sections];
@@ -34,23 +37,53 @@ export default function CourseForm({ onBack }) {
     ]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Prepare form data for upload (example, adjust as needed)
+    setLoading(true);
+    const ipfsSections = [];
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      let ipfsHash = '';
+      if (section.videoFile) {
+        ipfsHash = await uploadVideoToIPFS(section.videoFile);
+      }
+      ipfsSections.push({
+        title: section.title,
+        docUrl: section.docUrl,
+        ipfsHash,
+      });
+    }
     const courseData = {
       title: courseTitle,
       description: courseDescription,
-      sections: sections.map(({ title, videoFile, docUrl }) => ({ title, videoFile, docUrl })),
+      createdBy: '0x123abc456def', // Replace with actual wallet address if available
+      sections: ipfsSections,
     };
-    console.log('Submitting course:', courseData);
-    // You may want to use FormData and send to backend here
+    try {
+      const data = await createFullCourse(courseData);
+      console.log('Course created:', data);
+      setLoading(false);
+      onBack(); // Redirect to dashboard after success
+    } catch (err) {
+      setLoading(false);
+      console.error('Error creating course:', err);
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <button className="mb-4 text-blue-600" onClick={onBack}>&larr; Back to Dashboard</button>
       <h2 className="text-3xl font-bold mb-6">Create New Course</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className={loading ? 'pointer-events-none opacity-60' : ''}>
+        {loading && (
+          <div className="flex items-center justify-center mb-4">
+            <svg className="animate-spin h-6 w-6 text-blue-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+            </svg>
+            <span className="text-blue-600 font-semibold">Uploading videos and creating course, please wait...</span>
+          </div>
+        )}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="mb-4">
             <label className="block font-semibold mb-1">Course Title</label>

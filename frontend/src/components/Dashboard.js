@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const dummyCourses = [
   {
@@ -29,6 +30,8 @@ const completedCourses = [
 ];
 
 export default function Dashboard({ onAddCourse, onCourseClick }) {
+  const navigate = useNavigate();
+
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
       <h1 className="text-4xl font-bold mb-2">Learning Dashboard</h1>
@@ -46,7 +49,7 @@ export default function Dashboard({ onAddCourse, onCourseClick }) {
           <div className="font-semibold text-lg">Add New Course</div>
           <div className="text-gray-500 text-sm">Share your knowledge with the community</div>
         </div>
-        <div className="flex-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex flex-col items-center justify-center py-10 text-white">
+        <div className="flex-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex flex-col items-center justify-center py-10 text-white cursor-pointer" onClick={() => navigate('/courses')}>
           <div className="text-3xl mb-2">📖</div>
           <div className="font-semibold text-lg">Browse Courses</div>
           <div className="text-sm">Discover new learning opportunities</div>
