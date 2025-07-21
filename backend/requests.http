@@ -1,0 +1,42 @@
+### Create a new course
+POST http://localhost:5000/api/courses
+Content-Type: application/json
+
+{
+  "title": "Sample Course",
+  "description": "This is a test course.",
+  "createdBy": "0x123abc456def",
+  "sections": ["687dd46adfc18a948b4062bd"]
+}
+
+
+### GET all courses
+GET http://localhost:5000/api/courses
+
+### Submit the quiz answers for a specific course
+POST http://localhost:5000/api/quizzes/submit
+Content-Type: application/json
+
+{
+  "courseId": "6879e3d9caefd397dbb40b72",
+  "walletAddress": "0x123abc456def",
+  "userAnswers": [
+    [ "Library" ],           
+    [ "Routing & Middleware" ]
+  ]
+}
+
+### Create a new section
+POST http://localhost:5000/api/sections
+Content-Type: application/json
+
+{
+  "title": "Sample Section",
+  "course": null,
+  "videos": ["687dd1d3ed3beb2b629516bc"]
+}
+
+### Get all sections
+GET http://localhost:5000/api/sections
+
+
