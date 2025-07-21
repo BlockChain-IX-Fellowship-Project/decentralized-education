@@ -1,47 +1,31 @@
-import 'dotenv/config';
-import fs from 'fs';
-import PinataClient from '@pinata/sdk';
+import pinataService from '../services/vdoService.js';
+import Video from '../models/Video.js';
 
-const pinata = new PinataClient(process.env.PINATA_API_KEY, process.env.PINATA_API_SECRET);
-console.log('PINATA_API_KEY:', process.env.PINATA_API_KEY);
-console.log('PINATA_API_SECRET:', process.env.PINATA_API_SECRET);
 export const uploadVideo = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No video file uploaded' });
     }
 
-    // Debug: Confirm file location
-    console.log("Multer saved file to:", req.file.path);
+    const { path: filePath, originalname: originalName, filename } = req.file;
+    const uploader = req.body.uploader || 'unknown'; // Adjust as needed
 
-    // Read file directly from Multer's path
-    const readableStream = fs.createReadStream(req.file.path);
-    const options = {
-      pinataMetadata: {
-        name: req.file.originalname,
-      },
-      pinataOptions: {
-        cidVersion: 0
-      }
-    };
+    // Upload to Pinata
+    const result = await pinataService.uploadToPinata(filePath, originalName);
 
-    // Debug: Before pinFileToIPFS
-    console.log('About to upload to Pinata:', req.file.originalname);
-
-    const result = await pinata.pinFileToIPFS(readableStream, options);
-
-    // Debug: After pinFileToIPFS
-    console.log('Pinata upload result:', result);
-
-    // Clean up: Delete temporary file
-    fs.unlinkSync(req.file.path);
-
-    // Debug: Before sending response
-    console.log('Sending response to client');
+    // Create Video document
+    const newVideo = new Video({
+      fileName: filename,
+      originalName,
+      ipfsHash: result.ipfsHash,
+      uploader
+    });
+    await newVideo.save();
 
     res.status(201).json({
-      ipfsHash: result.IpfsHash,
-      originalName: req.file.originalname
+      ipfsHash: result.ipfsHash,
+      videoId: newVideo._id,
+      originalName
     });
   } catch (err) {
     console.error("Upload error:", err);

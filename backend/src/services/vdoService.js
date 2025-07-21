@@ -1,22 +1,33 @@
+// services/pinataService.js
+import 'dotenv/config';
 import fs from 'fs';
-import { Web3Storage, File } from 'web3.storage';
-import path from 'path';
-import Video from '../models/videoModel.js';
+import PinataClient from '@pinata/sdk';
 
-const client = new Web3Storage({ token: process.env.WEB3_STORAGE_TOKEN });
+// Debug: Log environment variables
+console.log('PINATA_API_KEY:', process.env.PINATA_API_KEY);
+console.log('PINATA_API_SECRET:', process.env.PINATA_API_SECRET);
 
-export const uploadVideoToIPFS = async (filePath, originalName, uploader) => {
-  const fileBuffer = fs.readFileSync(filePath);
-  const files = [new File([fileBuffer], originalName)];
-  const cid = await client.put(files);
+const pinata = new PinataClient(process.env.PINATA_API_KEY, process.env.PINATA_API_SECRET);
 
-  const newVideo = new Video({
-    fileName: path.basename(filePath),
+const uploadToPinata = async (filePath, originalName) => {
+  const readableStream = fs.createReadStream(filePath);
+
+  const options = {
+    pinataMetadata: { name: originalName },
+    pinataOptions: { cidVersion: 0 },
+  };
+
+  const result = await pinata.pinFileToIPFS(readableStream, options);
+
+  // Clean up temporary file
+  fs.unlinkSync(filePath);
+
+  return {
+    ipfsHash: result.IpfsHash,
     originalName,
-    ipfsHash: cid,
-    uploader
-  });
+  };
+};
 
-  await newVideo.save();
-  return newVideo;
+export default {
+  uploadToPinata,
 };
