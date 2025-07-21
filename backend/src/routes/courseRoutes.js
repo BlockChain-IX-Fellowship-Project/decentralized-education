@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.post('/', courseController.createCourse);
 router.get('/', courseController.getAllCourses);
+router.post('/full', courseController.createFullCourse);
 
 export default router;

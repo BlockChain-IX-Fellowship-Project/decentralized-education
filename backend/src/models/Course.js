@@ -1,24 +1,10 @@
 import mongoose from 'mongoose';
 
-const quizSchema = new mongoose.Schema({
-  question: String,
-  options: [String],
-  correctAnswer: String
-}, { _id: false });
-
-const sectionSchema = new mongoose.Schema({
-  title: String,
-  videoLinks: [String],
-  docLinks: [String],
-  quizzes: [quizSchema]
-}, { _id: false });
-
 const courseSchema = new mongoose.Schema({
   title: String,
   description: String,
-  contributor: String,
-  sections: [sectionSchema]
+  createdBy: { type: String, required: true }, // wallet address
+  sections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Section' }]
 });
 
-const Course = mongoose.model('Course', courseSchema);
-export default Course;
+export default mongoose.model('Course', courseSchema);
