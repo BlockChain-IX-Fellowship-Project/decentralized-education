@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { uploadVideoToIPFS } from '../utils/uploadVideoToIPFS';
 import { createFullCourse } from '../utils/createFullCourse';
 
-export default function CourseForm({ onBack }) {
+export default function CourseForm({ onBack, wallet }) {
   const [sections, setSections] = useState([
     {
       title: '',
@@ -56,7 +56,7 @@ export default function CourseForm({ onBack }) {
     const courseData = {
       title: courseTitle,
       description: courseDescription,
-      createdBy: '0x123abc456def', // Replace with actual wallet address if available
+      createdBy: wallet, // Use actual wallet address
       sections: ipfsSections,
     };
     try {

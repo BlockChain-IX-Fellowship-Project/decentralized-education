@@ -4,15 +4,16 @@ import Dashboard from './components/Dashboard';
 import CourseForm from './components/CourseForm';
 import CourseDetails from './components/CourseDetails';
 import BrowseCourses from './components/BrowseCourses';
+import Login from './components/Login';
 
 function DashboardWrapper() {
   const navigate = useNavigate();
   return <Dashboard onAddCourse={() => navigate('/add-course')} onCourseClick={course => navigate(`/course/${course.id || 1}`)} />;
 }
 
-function CourseFormWrapper() {
+function CourseFormWrapper({ wallet }) {
   const navigate = useNavigate();
-  return <CourseForm onBack={() => navigate('/dashboard')} />;
+  return <CourseForm onBack={() => navigate('/dashboard')} wallet={wallet} />;
 }
 
 function CourseDetailsWrapper() {
@@ -25,13 +26,19 @@ function CourseDetailsWrapper() {
 }
 
 export default function App() {
+  const [wallet, setWallet] = React.useState(null);
+
+  if (!wallet) {
+    return <Login onLogin={setWallet} />;
+  }
+
   return (
     <Router>
       <div className="min-h-screen bg-blue-50">
         <Routes>
           <Route path="/" element={<DashboardWrapper />} />
           <Route path="/dashboard" element={<DashboardWrapper />} />
-          <Route path="/add-course" element={<CourseFormWrapper />} />
+          <Route path="/add-course" element={<CourseFormWrapper wallet={wallet} />} />
           <Route path="/course/:id" element={<CourseDetailsWrapper />} />
           <Route path="/courses" element={<BrowseCourses />} />
         </Routes>
