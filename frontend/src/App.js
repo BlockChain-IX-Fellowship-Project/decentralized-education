@@ -4,6 +4,8 @@ import Dashboard from './components/Dashboard';
 import CourseForm from './components/CourseForm';
 import CourseDetails from './components/CourseDetails';
 import BrowseCourses from './components/BrowseCourses';
+import Wallet from './components/common/Wallet';
+import { Web3Provider, useWeb3Context } from './components/hooks/Web3Context';
 
 function DashboardWrapper() {
   const navigate = useNavigate();
@@ -24,18 +26,57 @@ function CourseDetailsWrapper() {
   return <CourseDetails course={dummyCourse} onBack={() => navigate('/dashboard')} />;
 }
 
+function RequireWallet({ children }) {
+  const { account, isMetaMaskInstalled } = useWeb3Context();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!isMetaMaskInstalled || !account) {
+      navigate('/wallet');
+    }
+  }, [account, isMetaMaskInstalled, navigate]);
+
+  if (!isMetaMaskInstalled || !account) {
+    return null; // Or a loading spinner
+  }
+  return children;
+}
+
 export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-blue-50">
-        <Routes>
-          <Route path="/" element={<DashboardWrapper />} />
-          <Route path="/dashboard" element={<DashboardWrapper />} />
-          <Route path="/add-course" element={<CourseFormWrapper />} />
-          <Route path="/course/:id" element={<CourseDetailsWrapper />} />
-          <Route path="/courses" element={<BrowseCourses />} />
-        </Routes>
-      </div>
-    </Router>
+    <Web3Provider>
+      <Router>
+        <div className="min-h-screen bg-blue-50">
+          <Routes>
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/" element={
+              <RequireWallet>
+                <DashboardWrapper />
+              </RequireWallet>
+            } />
+            <Route path="/dashboard" element={
+              <RequireWallet>
+                <DashboardWrapper />
+              </RequireWallet>
+            } />
+            <Route path="/add-course" element={
+              <RequireWallet>
+                <CourseFormWrapper />
+              </RequireWallet>
+            } />
+            <Route path="/course/:id" element={
+              <RequireWallet>
+                <CourseDetailsWrapper />
+              </RequireWallet>
+            } />
+            <Route path="/courses" element={
+              <RequireWallet>
+                <BrowseCourses />
+              </RequireWallet>
+            } />
+          </Routes>
+        </div>
+      </Router>
+    </Web3Provider>
   );
 }
