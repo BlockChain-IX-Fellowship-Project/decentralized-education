@@ -1,25 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, BookOpen, Clock, User, Star, Play, CheckCircle, Lock } from "lucide-react";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Progress } from "./ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
-const statusLabel = {
-  completed: { text: 'Completed', color: 'text-green-600', icon: '✓' },
-  available: { text: 'Available', color: 'text-blue-600', icon: '' },
-  locked: { text: 'Locked', color: 'text-gray-400', icon: '🔒' },
+const levelColors = {
+  Beginner: "bg-green-100 text-green-800",
+  Intermediate: "bg-yellow-100 text-yellow-800",
+  Advanced: "bg-red-100 text-red-800",
 };
 
 export default function CourseDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [watchedItems, setWatchedItems] = useState({});
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
     async function fetchCourse() {
       setLoading(true);
       try {
         const res = await fetch(`http://localhost:5000/api/courses/${id}`);
-        if (!res.ok) throw new Error('Failed to fetch course');
+        if (!res.ok) throw new Error("Failed to fetch course");
         const data = await res.json();
         setCourse(data);
       } catch (err) {
@@ -30,83 +35,267 @@ export default function CourseDetails() {
     fetchCourse();
   }, [id]);
 
-  const handleMarkAsWatched = (sectionIdx, type) => {
-    setWatchedItems(prev => ({ ...prev, [`${sectionIdx}-${type}`]: true }));
-  };
+  if (loading)
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-blue-600 font-semibold text-center">Loading course details...</div>
+      </div>
+    );
 
-  const canTakeQuiz = (sectionIdx) => {
-    return watchedItems[`${sectionIdx}-video`] && watchedItems[`${sectionIdx}-document`];
-  };
+  if (!course)
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Course Not Found</h1>
+          <Link to="/courses" className="text-blue-600 hover:text-blue-800">
+            ← Back to Browse Courses
+          </Link>
+        </div>
+      </div>
+    );
 
-  if (loading) return <div className="text-blue-600 font-semibold">Loading course details...</div>;
-  if (!course) return <div className="text-red-600">Course not found.</div>;
+  // Fallbacks for missing backend fields
+  const instructor = course.createdBy || course.instructor || "Unknown";
+  const instructorBio = course.instructorBio || "";
+  const students = course.students || 0;
+  const rating = course.rating || "-";
+  const tokens = course.tokens || 0;
+  const sections = course.sections || [];
+  const duration = course.duration || "-";
+  const level = course.level || "Beginner";
+  const image = course.image || "/placeholder.svg";
+  const requirements = course.requirements || [];
+  const whatYouWillLearn = course.whatYouWillLearn || [];
+  const progress = course.progress || 0;
+  // For curriculum, fallback to sections if curriculum is not present
+  const curriculum = course.curriculum || (Array.isArray(sections)
+    ? sections.map((section, idx) => ({
+        id: section._id || idx + 1,
+        title: section.title || `Section ${idx + 1}`,
+        duration: section.duration || "-",
+        completed: false,
+        locked: idx > 0, // Only first section unlocked by default
+      }))
+    : []);
+
+  const handleEnroll = () => {
+    setIsEnrolled(true);
+  };
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <button className="mb-4 text-blue-600" onClick={() => navigate('/dashboard')}>&larr; Back to Dashboard</button>
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <div className="flex justify-between items-center mb-2">
-          <div>
-            <h2 className="text-3xl font-bold mb-1">{course.title}</h2>
-            <div className="text-gray-600 text-base mb-1">{course.description}</div>
-            <div className="text-gray-500 text-sm">Instructor: {course.createdBy || 'Unknown'}</div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Link
+            to="/courses"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Browse Courses
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            {/* Course Header */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <Badge className={`${levelColors[level]} mb-3`}>{level}</Badge>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-3">{course.title}</h1>
+                  <p className="text-gray-600 text-lg mb-4">{course.description}</p>
+
+                  <div className="flex items-center gap-6 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <User className="w-4 h-4" />
+                      {instructor}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      {rating}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="w-4 h-4" />
+                      {Array.isArray(sections) ? sections.length : sections} sections
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {duration}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="flex items-center gap-1 mb-2">
+                    <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">T</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">{tokens}</span>
+                    <span className="text-gray-600">tokens</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="aspect-video relative overflow-hidden rounded-lg">
+                <img
+                  src={image}
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                  <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
+                    <Play className="w-5 h-5 mr-2" />
+                    Preview Course
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Course Content Tabs */}
+            <Tabs defaultValue="curriculum" className="bg-white rounded-lg shadow-sm">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+                <TabsTrigger value="about">About</TabsTrigger>
+                <TabsTrigger value="instructor">Instructor</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="curriculum" className="p-6">
+                <h3 className="text-xl font-semibold mb-4">Course Curriculum</h3>
+                <div className="space-y-3">
+                  {curriculum.map((lesson, index) => (
+                    <div
+                      key={lesson.id}
+                      className={`flex items-center justify-between p-4 rounded-lg border ${
+                        lesson.locked ? "bg-gray-50 border-gray-200" : "bg-white border-gray-300 hover:border-blue-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          {lesson.completed ? (
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                          ) : lesson.locked ? (
+                            <Lock className="w-5 h-5 text-gray-400" />
+                          ) : (
+                            <Play className="w-5 h-5 text-blue-500" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className={`font-medium ${lesson.locked ? "text-gray-500" : "text-gray-900"}`}>
+                            {index + 1}. {lesson.title}
+                          </h4>
+                        </div>
+                      </div>
+                      <span className={`text-sm ${lesson.locked ? "text-gray-400" : "text-gray-600"}`}>
+                        {lesson.duration}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="about" className="p-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-3">What you'll learn</h3>
+                    <ul className="space-y-2">
+                      {whatYouWillLearn.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold mb-3">Requirements</h3>
+                    <ul className="space-y-2">
+                      {requirements.map((requirement, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-gray-700">{requirement}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="instructor" className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                    {instructor
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">{instructor}</h3>
+                    <p className="text-gray-600 mb-4">{instructorBio}</p>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span>⭐ 4.8 instructor rating</span>
+                      <span>👥 {students} students</span>
+                      <span>🎓 12 courses</span>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
-          <div className="bg-gray-100 px-4 py-2 rounded-lg text-right">
-            <div className="font-bold text-lg">{course.tokens || 0}</div>
-            <div className="text-xs text-gray-600">Tokens</div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-8">
+              <CardHeader>
+                <CardTitle className="text-center">{isEnrolled ? "Continue Learning" : "Enroll in Course"}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isEnrolled && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
+                )}
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Duration:</span>
+                    <span className="font-medium">{duration}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Sections:</span>
+                    <span className="font-medium">{Array.isArray(sections) ? sections.length : sections}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Level:</span>
+                    <Badge className={levelColors[level]}>{level}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tokens Required:</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">T</span>
+                      </div>
+                      <span className="font-medium">{tokens}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button className="w-full" size="lg" onClick={handleEnroll} disabled={isEnrolled}>
+                  {isEnrolled ? "Enrolled ✓" : "Enroll Now"}
+                </Button>
+
+                {!isEnrolled && <p className="text-xs text-gray-500 text-center">30-day money-back guarantee</p>}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-      <h3 className="text-2xl font-bold mb-4">Course Sections</h3>
-      {course.sections && course.sections.length > 0 ? course.sections.map((section, idx) => {
-        const isLocked = idx > 0 && !watchedItems[`${idx - 1}-video`];
-        const isCompleted = watchedItems[`${idx}-video`];
-        return (
-          <div
-            key={section._id || idx}
-            className={`rounded-lg p-6 mb-6 border flex flex-col gap-2 bg-white border-blue-200 ${isLocked ? 'opacity-60' : ''}`}
-            style={isLocked ? { pointerEvents: 'none', opacity: 0.6 } : {}}
-          >
-            <div className="flex items-center gap-4 mb-2">
-              <span className="inline-block w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">{idx + 1}</span>
-              <div>
-                <div className="font-bold text-xl flex items-center gap-2">{section.title}</div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-8 items-start mt-2">
-              <div className="flex flex-col items-start w-56">
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1"><span>▶</span> Video Lesson</div>
-                {section.videos && section.videos.length > 0 ? section.videos.map((video, vIdx) => (
-                  <div style={{ pointerEvents: 'auto', opacity: 1, width: '100%' }} key={video._id || vIdx}>
-                    <video
-                      controls
-                      width="220"
-                      className="mb-2 rounded border"
-                     src={`https://ipfs.io/ipfs/${video.ipfsHash}`}
-                    />
-                  </div>
-                )) : <div className="text-gray-400 text-xs">No video</div>}
-                <button
-                  className="w-full text-xs text-blue-600"
-                  onClick={() => handleMarkAsWatched(idx, 'video')}
-                  disabled={watchedItems[`${idx}-video`] || isLocked}
-                >
-                  {watchedItems[`${idx}-video`] ? '✓ Watched' : 'Mark as Watched'}
-                </button>
-              </div>
-              <div className="flex flex-col items-start w-56">
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1"><span>⚙️</span> Section Quiz</div>
-                <button
-                  className={`w-full bg-blue-500 text-white px-4 py-2 rounded ${!watchedItems[`${idx}-video`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={!watchedItems[`${idx}-video`] || isLocked}
-                >
-                  {watchedItems[`${idx}-video`] ? 'Take Quiz' : 'Complete video first'}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      }) : <div className="text-gray-500">No sections found.</div>}
     </div>
   );
 }
