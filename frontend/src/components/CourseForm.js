@@ -39,7 +39,10 @@ export default function CourseForm({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [courseThumbnail, setCourseThumbnail] = useState(null); // Store course-level thumbnail
   const [instructor, setInstructor] = useState("");
+  const [instructorBio, setInstructorBio] = useState("");
   const [level, setLevel] = useState("Beginner");
+  const [whatYouWillLearn, setWhatYouWillLearn] = useState([""]);
+  const [requirements, setRequirements] = useState([""]);
 
   const handleSectionChange = (idx, field, value) => {
     const updated = [...sections];
@@ -71,6 +74,28 @@ export default function CourseForm({ onBack }) {
     ]);
   };
 
+  const handleAddWhatYouWillLearn = () => setWhatYouWillLearn([...whatYouWillLearn, ""]);
+  const handleChangeWhatYouWillLearn = (idx, value) => {
+    const updated = [...whatYouWillLearn];
+    updated[idx] = value;
+    setWhatYouWillLearn(updated);
+  };
+  const handleRemoveWhatYouWillLearn = (idx) => {
+    if (whatYouWillLearn.length === 1) return;
+    setWhatYouWillLearn(whatYouWillLearn.filter((_, i) => i !== idx));
+  };
+
+  const handleAddRequirement = () => setRequirements([...requirements, ""]);
+  const handleChangeRequirement = (idx, value) => {
+    const updated = [...requirements];
+    updated[idx] = value;
+    setRequirements(updated);
+  };
+  const handleRemoveRequirement = (idx) => {
+    if (requirements.length === 1) return;
+    setRequirements(requirements.filter((_, i) => i !== idx));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -99,7 +124,10 @@ export default function CourseForm({ onBack }) {
       title: courseTitle,
       description: courseDescription,
       instructor,
+      instructorBio,
       level,
+      whatYouWillLearn: whatYouWillLearn.filter(Boolean),
+      requirements: requirements.filter(Boolean),
       sections: ipfsSections,
       image: imageDataUrl,
     };
@@ -141,12 +169,46 @@ export default function CourseForm({ onBack }) {
             <input className="w-full border rounded px-3 py-2" placeholder="Enter instructor name" value={instructor} onChange={e => setInstructor(e.target.value)} />
           </div>
           <div className="mb-4">
+            <label className="block font-semibold mb-1">Instructor Detail / About</label>
+            <textarea className="w-full border rounded px-3 py-2" placeholder="Enter instructor bio or about" value={instructorBio} onChange={e => setInstructorBio(e.target.value)} />
+          </div>
+          <div className="mb-4">
             <label className="block font-semibold mb-1">Level</label>
             <select className="w-full border rounded px-3 py-2" value={level} onChange={e => setLevel(e.target.value)}>
               <option value="Beginner">Beginner</option>
               <option value="Intermediate">Intermediate</option>
               <option value="Advanced">Advanced</option>
             </select>
+          </div>
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">What You Will Learn</label>
+            {whatYouWillLearn.map((item, idx) => (
+              <div key={idx} className="flex gap-2 mb-2">
+                <input
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Learning outcome"
+                  value={item}
+                  onChange={e => handleChangeWhatYouWillLearn(idx, e.target.value)}
+                />
+                <button type="button" className="bg-red-100 text-red-700 px-2 rounded" onClick={() => handleRemoveWhatYouWillLearn(idx)} disabled={whatYouWillLearn.length === 1}>Remove</button>
+              </div>
+            ))}
+            <button type="button" className="bg-blue-100 text-blue-700 px-3 py-1 rounded" onClick={handleAddWhatYouWillLearn}>+ Add</button>
+          </div>
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">Requirements</label>
+            {requirements.map((item, idx) => (
+              <div key={idx} className="flex gap-2 mb-2">
+                <input
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Requirement"
+                  value={item}
+                  onChange={e => handleChangeRequirement(idx, e.target.value)}
+                />
+                <button type="button" className="bg-red-100 text-red-700 px-2 rounded" onClick={() => handleRemoveRequirement(idx)} disabled={requirements.length === 1}>Remove</button>
+              </div>
+            ))}
+            <button type="button" className="bg-blue-100 text-blue-700 px-3 py-1 rounded" onClick={handleAddRequirement}>+ Add</button>
           </div>
         </div>
         <h3 className="text-2xl font-bold mb-4">Course Sections</h3>

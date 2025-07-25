@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, BookOpen, Clock, User, Star, Play, CheckCircle, Lock } from "lucide-react";
+import { ArrowLeft, User,  Play, CheckCircle, Lock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -141,12 +141,14 @@ export default function CourseDetails() {
 
               <TabsContent value="curriculum" className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Course Curriculum</h3>
-                <div className="space-y-3">
+                <div className="space-y-5">
                   {curriculum.map((lesson, index) => (
                     <div
                       key={lesson.id}
-                      className={`flex items-center justify-between p-4 rounded-lg border ${
-                        lesson.locked ? "bg-gray-50 border-gray-200" : "bg-white border-gray-300 hover:border-blue-300"
+                      className={`flex items-center justify-between p-5 rounded-xl ${
+                        lesson.locked
+                          ? "bg-gray-50 text-gray-400"
+                          : "bg-white border border-gray-200 text-gray-900"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -160,12 +162,12 @@ export default function CourseDetails() {
                           )}
                         </div>
                         <div>
-                          <h4 className={`font-medium ${lesson.locked ? "text-gray-500" : "text-gray-900"}`}>
+                          <h4 className={`font-semibold ${lesson.locked ? "text-gray-400" : "text-gray-900"}`}>
                             {index + 1}. {lesson.title}
                           </h4>
                         </div>
                       </div>
-                      <span className={`text-sm ${lesson.locked ? "text-gray-400" : "text-gray-600"}`}>
+                      <span className={`text-base font-medium ${lesson.locked ? "text-gray-400" : "text-gray-600"}`}>
                         {lesson.duration}
                       </span>
                     </div>
@@ -225,42 +227,29 @@ export default function CourseDetails() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-8">
-              <CardHeader>
-                <CardTitle className="text-center">{isEnrolled ? "Continue Learning" : "Enroll in Course"}</CardTitle>
+            <Card className="bg-white rounded-xl border border-gray-200 shadow-none p-6 flex flex-col items-center">
+              <CardHeader className="w-full p-0 mb-4">
+                <CardTitle className="text-center text-2xl font-bold w-full">Enroll in Course</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {isEnrolled && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Progress</span>
-                      <span>{progress}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2" />
-                  </div>
-                )}
-
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
+              <CardContent className="w-full p-0 flex flex-col items-center">
+                <div className="space-y-4 w-full">
+                  <div className="flex justify-between w-full text-base">
                     <span className="text-gray-600">Duration:</span>
-                    <span className="font-medium">{duration}</span>
+                    <span className="font-semibold">{duration}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between w-full text-base">
                     <span className="text-gray-600">Sections:</span>
-                    <span className="font-medium">{Array.isArray(sections) ? sections.length : sections}</span>
+                    <span className="font-semibold">{Array.isArray(sections) ? sections.length : sections}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between w-full text-base items-center">
                     <span className="text-gray-600">Level:</span>
-                    <Badge className={levelColors[level]}>{level}</Badge>
+                    <Badge className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium text-sm shadow-none">{level}</Badge>
                   </div>
-                  {/* Remove tokens display */}
                 </div>
-
-                <Button className="w-full" size="lg" onClick={handleEnroll} disabled={isEnrolled}>
+                <Button className="w-full mt-6 bg-black text-white hover:bg-gray-900 text-base font-semibold py-3 rounded-lg" size="lg" onClick={handleEnroll} disabled={isEnrolled}>
                   {isEnrolled ? "Enrolled ✓" : "Enroll Now"}
                 </Button>
-
-                {!isEnrolled && <p className="text-xs text-gray-500 text-center">30-day money-back guarantee</p>}
+                <p className="text-xs text-gray-500 text-center mt-4">30-day money-back guarantee</p>
               </CardContent>
             </Card>
           </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getAllCourses } from "../utils/getAllCourses";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, BookOpen, Clock, User, Star } from "lucide-react";
+import { ArrowLeft, Search, BookOpen, User } from "lucide-react";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -121,7 +121,7 @@ export default function BrowseCoursesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
               <Link key={course._id || course.id} to={`/course/${course._id || course.id}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+                <Card className="bg-white h-full hover:shadow-lg transition-shadow cursor-pointer group">
                   <div className="aspect-video relative overflow-hidden rounded-t-lg">
                     <img
                       src={course.image || "/placeholder.svg"}
