@@ -2,17 +2,44 @@ import React, { useState } from 'react';
 import { uploadVideoToIPFS } from '../utils/uploadVideoToIPFS';
 import { createFullCourse } from '../utils/createFullCourse';
 
+// Helper to extract a thumbnail from a video file
+async function extractVideoThumbnail(file, seekTo = 1.0) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.src = URL.createObjectURL(file);
+    video.muted = true;
+    video.playsInline = true;
+    video.currentTime = seekTo;
+    video.onloadeddata = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        resolve(blob);
+      }, 'image/jpeg');
+    };
+    video.onerror = reject;
+  });
+}
+
 export default function CourseForm({ onBack }) {
   const [sections, setSections] = useState([
     {
       title: '',
       videoFile: null,
       docUrl: '',
+      thumbnail: null, // Add thumbnail to section state
     },
   ]);
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [courseThumbnail, setCourseThumbnail] = useState(null); // Store course-level thumbnail
+  const [instructor, setInstructor] = useState("");
+  const [level, setLevel] = useState("Beginner");
 
   const handleSectionChange = (idx, field, value) => {
     const updated = [...sections];
@@ -20,9 +47,16 @@ export default function CourseForm({ onBack }) {
     setSections(updated);
   };
 
-  const handleVideoChange = (idx, file) => {
+  const handleVideoChange = async (idx, file) => {
     const updated = [...sections];
     updated[idx].videoFile = file;
+    // Extract thumbnail for this video
+    if (file) {
+      const thumbBlob = await extractVideoThumbnail(file, 1.0);
+      updated[idx].thumbnail = thumbBlob;
+      // For now, use the first section's thumbnail as the course image
+      if (idx === 0) setCourseThumbnail(thumbBlob);
+    }
     setSections(updated);
   };
 
@@ -53,17 +87,26 @@ export default function CourseForm({ onBack }) {
         ipfsHash,
       });
     }
+    let imageDataUrl = '';
+    if (courseThumbnail) {
+      imageDataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(courseThumbnail);
+      });
+    }
     const courseData = {
       title: courseTitle,
       description: courseDescription,
-      createdBy: '0x123abc456def', // Replace with actual wallet address if available
+      instructor,
+      level,
       sections: ipfsSections,
+      image: imageDataUrl,
     };
     try {
       const data = await createFullCourse(courseData);
-      console.log('Course created:', data);
       setLoading(false);
-      onBack(); // Redirect to dashboard after success
+      onBack();
     } catch (err) {
       setLoading(false);
       console.error('Error creating course:', err);
@@ -93,6 +136,18 @@ export default function CourseForm({ onBack }) {
             <label className="block font-semibold mb-1">Course Description</label>
             <textarea className="w-full border rounded px-3 py-2" placeholder="Describe what students will learn" value={courseDescription} onChange={e => setCourseDescription(e.target.value)} />
           </div>
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">Instructor Name</label>
+            <input className="w-full border rounded px-3 py-2" placeholder="Enter instructor name" value={instructor} onChange={e => setInstructor(e.target.value)} />
+          </div>
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">Level</label>
+            <select className="w-full border rounded px-3 py-2" value={level} onChange={e => setLevel(e.target.value)}>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+          </div>
         </div>
         <h3 className="text-2xl font-bold mb-4">Course Sections</h3>
         {sections.map((section, sIdx) => (
@@ -112,7 +167,13 @@ export default function CourseForm({ onBack }) {
                   accept="video/*"
                   onChange={e => handleVideoChange(sIdx, e.target.files[0])}
                 />
-                
+                {section.thumbnail && (
+                  <img
+                    src={URL.createObjectURL(section.thumbnail)}
+                    alt="Video thumbnail"
+                    className="w-24 h-16 object-cover rounded border"
+                  />
+                )}
               </div>
               {section.videoFile && (
                 <div className="text-green-600 text-sm mb-2">Selected: {section.videoFile.name}</div>

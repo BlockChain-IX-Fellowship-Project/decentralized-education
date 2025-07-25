@@ -144,29 +144,12 @@ export default function BrowseCoursesPage() {
                         <User className="w-4 h-4" />
                         {course.instructor || "Unknown"}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        {course.rating || "-"}
-                      </div>
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                       <div className="flex items-center gap-1">
                         <BookOpen className="w-4 h-4" />
                         {course.sections?.length || course.sections || 0} sections
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {course.duration || "-"}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <div className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <span className="text-xs font-bold text-white">T</span>
-                        </div>
-                        <span className="font-semibold text-gray-900">{course.tokens || 0} tokens</span>
                       </div>
                     </div>
                   </CardContent>

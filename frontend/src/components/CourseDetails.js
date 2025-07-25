@@ -59,7 +59,6 @@ export default function CourseDetails() {
   const instructorBio = course.instructorBio || "";
   const students = course.students || 0;
   const rating = course.rating || "-";
-  const tokens = course.tokens || 0;
   const sections = course.sections || [];
   const duration = course.duration || "-";
   const level = course.level || "Beginner";
@@ -112,30 +111,9 @@ export default function CourseDetails() {
                       <User className="w-4 h-4" />
                       {instructor}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      {rating}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="w-4 h-4" />
-                      {Array.isArray(sections) ? sections.length : sections} sections
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {duration}
-                    </div>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <div className="flex items-center gap-1 mb-2">
-                    <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">T</span>
-                    </div>
-                    <span className="text-2xl font-bold text-gray-900">{tokens}</span>
-                    <span className="text-gray-600">tokens</span>
-                  </div>
-                </div>
+                {/* Remove tokens display */}
               </div>
 
               <div className="aspect-video relative overflow-hidden rounded-lg">
@@ -275,15 +253,7 @@ export default function CourseDetails() {
                     <span className="text-gray-600">Level:</span>
                     <Badge className={levelColors[level]}>{level}</Badge>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tokens Required:</span>
-                    <div className="flex items-center gap-1">
-                      <div className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">T</span>
-                      </div>
-                      <span className="font-medium">{tokens}</span>
-                    </div>
-                  </div>
+                  {/* Remove tokens display */}
                 </div>
 
                 <Button className="w-full" size="lg" onClick={handleEnroll} disabled={isEnrolled}>
