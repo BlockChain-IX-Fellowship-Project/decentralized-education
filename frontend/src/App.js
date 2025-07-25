@@ -6,6 +6,7 @@ import CourseDetails from './components/CourseDetails';
 import BrowseCourses from './components/BrowseCourses';
 import Wallet from './components/common/Wallet';
 import { Web3Provider, useWeb3Context } from './components/hooks/Web3Context';
+import SectionQuiz from './components/SectionQuiz';
 
 function DashboardWrapper() {
   const navigate = useNavigate();
@@ -74,6 +75,7 @@ export default function App() {
                 <BrowseCourses />
               </RequireWallet>
             } />
+            <Route path="/course/:courseId/section/:sectionId/quiz" element={<SectionQuiz />} />
           </Routes>
         </div>
       </Router>

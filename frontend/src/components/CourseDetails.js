@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, User,  Play, CheckCircle, Lock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -14,9 +14,29 @@ const levelColors = {
 
 export default function CourseDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [watchedItems, setWatchedItems] = useState({});
+  const [activeQuizIdx, setActiveQuizIdx] = useState(null);
+  const [userAnswers, setUserAnswers] = useState({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  const handleMarkAsWatched = (sectionIdx, type) => {
+    setWatchedItems(prev => ({ ...prev, [`${sectionIdx}-${type}`]: true }));
+  };
+
+  const handleAnswerSelect = (sectionIdx, qIdx, option) => {
+    setUserAnswers(prev => ({
+      ...prev,
+      [`${sectionIdx}-${qIdx}`]: option
+    }));
+  };
+
+  const handleSubmitQuiz = () => {
+    setQuizSubmitted(true);
+  };
 
   useEffect(() => {
     async function fetchCourse() {
@@ -55,204 +75,118 @@ export default function CourseDetails() {
 
   // Fallbacks for missing backend fields
   const instructor = course.createdBy || course.instructor || "Unknown";
-  const instructorBio = course.instructorBio || "";
-  const students = course.students || 0;
   const sections = course.sections || [];
   const duration = course.duration || "-";
   const level = course.level || "Beginner";
-  const image = course.image || "/placeholder.svg";
   const requirements = course.requirements || [];
   const whatYouWillLearn = course.whatYouWillLearn || [];
-  // const progress = course.progress || 0;
-  // For curriculum, fallback to sections if curriculum is not present
-  const curriculum = course.curriculum || (Array.isArray(sections)
-    ? sections.map((section, idx) => ({
-        id: section._id || idx + 1,
-        title: section.title || `Section ${idx + 1}`,
-        duration: section.duration || "-",
-        completed: false,
-        locked: idx > 0, // Only first section unlocked by default
-      }))
-    : []);
-
-  const handleEnroll = () => {
-    setIsEnrolled(true);
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            to="/courses"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors"
+    <div className="max-w-4xl mx-auto py-8 px-4 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+      <button className="mb-4 text-blue-600 hover:underline flex items-center gap-2" onClick={() => navigate('/dashboard')}>
+        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      </button>
+      {/* Custom styled text card for course preview */}
+      <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl shadow-lg p-10 mb-10 flex flex-col items-center justify-center border border-blue-200">
+        <h2 className="text-4xl font-extrabold text-gray-900 mb-2 drop-shadow-lg">{course.title}</h2>
+        <p className="text-lg text-gray-700 mb-4 text-center font-medium">{course.description}</p>
+        <div className="text-sm text-gray-500 font-semibold">Instructor: <span className="bg-blue-200 text-blue-800 px-2 py-1 rounded-full ml-1">{instructor}</span></div>
+      </div>
+      <h3 className="text-2xl font-bold mb-6 text-blue-900">Course Sections</h3>
+      <div className="space-y-8">
+      {sections.length > 0 ? sections.map((section, idx) => {
+        const isLocked = idx > 0 && !watchedItems[`${idx - 1}-video`];
+        const isCompleted = watchedItems[`${idx}-video`];
+        return (
+          <div
+            key={section._id || idx}
+            className={`rounded-2xl p-8 border flex flex-col gap-4 bg-white border-blue-200 shadow-md transition-all duration-200 hover:shadow-xl ${isLocked ? 'opacity-60' : ''}`}
+            style={isLocked ? { pointerEvents: 'none', opacity: 0.6 } : {}}
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Browse Courses
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Course Header */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <Badge className={`${levelColors[level]} mb-3`}>{level}</Badge>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-3">{course.title}</h1>
-                  <p className="text-gray-600 text-lg mb-4">{course.description}</p>
-
-                  <div className="flex items-center gap-6 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <User className="w-4 h-4" />
-                      {instructor}
-                    </div>
-                  </div>
-                </div>
-                {/* Remove tokens display */}
-              </div>
-
-              <div className="aspect-video relative overflow-hidden rounded-lg">
-                <img
-                  src={image}
-                  alt={course.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                  <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
-                    <Play className="w-5 h-5 mr-2" />
-                    Preview Course
-                  </Button>
-                </div>
+            <div className="flex items-center gap-4 mb-2">
+              <span className="inline-block w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl shadow">{idx + 1}</span>
+              <div>
+                <div className="font-bold text-2xl flex items-center gap-2 text-blue-900">{section.title}</div>
+                {section.description && (
+                  <div className="text-gray-600 text-base mt-1 italic">{section.description}</div>
+                )}
               </div>
             </div>
-
-            {/* Course Content Tabs */}
-            <Tabs defaultValue="curriculum" className="bg-white rounded-lg shadow-sm">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                <TabsTrigger value="about">About</TabsTrigger>
-                <TabsTrigger value="instructor">Instructor</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="curriculum" className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Course Curriculum</h3>
-                <div className="space-y-5">
-                  {curriculum.map((lesson, index) => (
-                    <div
-                      key={lesson.id}
-                      className={`flex items-center justify-between p-5 rounded-xl ${
-                        lesson.locked
-                          ? "bg-gray-50 text-gray-400"
-                          : "bg-white border border-gray-200 text-gray-900"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          {lesson.completed ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : lesson.locked ? (
-                            <Lock className="w-5 h-5 text-gray-400" />
-                          ) : (
-                            <Play className="w-5 h-5 text-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className={`font-semibold ${lesson.locked ? "text-gray-400" : "text-gray-900"}`}>
-                            {index + 1}. {lesson.title}
-                          </h4>
-                        </div>
-                      </div>
-                      <span className={`text-base font-medium ${lesson.locked ? "text-gray-400" : "text-gray-600"}`}>
-                        {lesson.duration}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="about" className="p-6">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3">What you'll learn</h3>
-                    <ul className="space-y-2">
-                      {whatYouWillLearn.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+            <div className="flex flex-wrap gap-8 items-start mt-2">
+              <div className="flex flex-col items-start w-64">
+                <div className="flex items-center gap-2 text-xs text-blue-500 mb-2 font-semibold"><Play className="w-4 h-4" /> Video Lesson</div>
+                {section.videos && section.videos.length > 0 ? section.videos.map((video, vIdx) => (
+                  <div style={{ pointerEvents: 'auto', opacity: 1, width: '100%' }} key={video._id || vIdx}>
+                    <video
+                      controls
+                      width="260"
+                      className="mb-2 rounded-lg border border-blue-200 shadow"
+                      src={`https://ipfs.io/ipfs/${video.ipfsHash}`}
+                    />
                   </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3">Requirements</h3>
-                    <ul className="space-y-2">
-                      {requirements.map((requirement, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
-                          <span className="text-gray-700">{requirement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="instructor" className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                    {instructor
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">{instructor}</h3>
-                    <p className="text-gray-600 mb-4">{instructorBio}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>⭐ 4.8 instructor rating</span>
-                      <span>👥 {students} students</span>
-                      <span>🎓 12 courses</span>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+                )) : <div className="text-gray-400 text-xs">No video</div>}
+                <button
+                  className={`w-full text-xs font-semibold py-2 rounded-lg mt-2 transition-all duration-150 ${watchedItems[`${idx}-video`] ? 'bg-green-100 text-green-700 cursor-default' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={() => handleMarkAsWatched(idx, 'video')}
+                  disabled={watchedItems[`${idx}-video`] || isLocked}
+                >
+                  {watchedItems[`${idx}-video`] ? <span><CheckCircle className="inline w-4 h-4 mr-1" /> Watched</span> : 'Mark as Watched'}
+                </button>
+              </div>
+              <div className="flex flex-col items-start w-64">
+                <div className="flex items-center gap-2 text-xs text-purple-500 mb-2 font-semibold"><Lock className="w-4 h-4" /> Section Quiz</div>
+                <button
+                  className={`w-full px-4 py-2 rounded-lg font-semibold transition-all duration-150 ${watchedItems[`${idx}-video`] ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                  disabled={!watchedItems[`${idx}-video`] || isLocked}
+                  onClick={() => navigate(`/course/${id}/section/${section._id}/quiz`)}
+                >
+                  {watchedItems[`${idx}-video`] ? 'Take Quiz' : 'Complete video first'}
+                </button>
+              </div>
+            </div>
           </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="bg-white rounded-xl border border-gray-200 shadow-none p-6 flex flex-col items-center">
-              <CardHeader className="w-full p-0 mb-4">
-                <CardTitle className="text-center text-2xl font-bold w-full">Enroll in Course</CardTitle>
-              </CardHeader>
-              <CardContent className="w-full p-0 flex flex-col items-center">
-                <div className="space-y-4 w-full">
-                  <div className="flex justify-between w-full text-base">
-                    <span className="text-gray-600">Duration:</span>
-                    <span className="font-semibold">{duration}</span>
+        );
+      }) : <div className="text-gray-500">No sections found.</div>}
+      </div>
+      {activeQuizIdx !== null && sections[activeQuizIdx].quizzes && sections[activeQuizIdx].quizzes.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 shadow-lg max-w-lg w-full">
+            <h2 className="text-xl font-bold mb-4">Section Quiz</h2>
+            {sections[activeQuizIdx].quizzes.map((q, qIdx) => (
+              <div key={qIdx} className="mb-4">
+                <div className="font-semibold mb-2">{q.question}</div>
+                {q.options.map((opt, optIdx) => (
+                  <label key={optIdx} className="block mb-1">
+                    <input
+                      type="radio"
+                      name={`quiz-${activeQuizIdx}-${qIdx}`}
+                      value={opt}
+                      checked={userAnswers[`${activeQuizIdx}-${qIdx}`] === opt}
+                      onChange={() => handleAnswerSelect(activeQuizIdx, qIdx, opt)}
+                      disabled={quizSubmitted}
+                    />{" "}
+                    {opt}
+                  </label>
+                ))}
+                {quizSubmitted && (
+                  <div className={`mt-1 text-sm ${userAnswers[`${activeQuizIdx}-${qIdx}`] === q.correctAnswer ? 'text-green-600' : 'text-red-600'}`}>
+                    {userAnswers[`${activeQuizIdx}-${qIdx}`] === q.correctAnswer ? 'Correct!' : `Incorrect. Correct: ${q.correctAnswer}`}
                   </div>
-                  <div className="flex justify-between w-full text-base">
-                    <span className="text-gray-600">Sections:</span>
-                    <span className="font-semibold">{Array.isArray(sections) ? sections.length : sections}</span>
-                  </div>
-                  <div className="flex justify-between w-full text-base items-center">
-                    <span className="text-gray-600">Level:</span>
-                    <Badge className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium text-sm shadow-none">{level}</Badge>
-                  </div>
-                </div>
-                <Button className="w-full mt-6 bg-black text-white hover:bg-gray-900 text-base font-semibold py-3 rounded-lg" size="lg" onClick={handleEnroll} disabled={isEnrolled}>
-                  {isEnrolled ? "Enrolled ✓" : "Enroll Now"}
-                </Button>
-                <p className="text-xs text-gray-500 text-center mt-4">30-day money-back guarantee</p>
-              </CardContent>
-            </Card>
+                )}
+              </div>
+            ))}
+            {!quizSubmitted ? (
+              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold" onClick={handleSubmitQuiz}>
+                Submit Quiz
+              </button>
+            ) : (
+              <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold" onClick={() => { setActiveQuizIdx(null); setQuizSubmitted(false); setUserAnswers({}); }}>
+                Close
+              </button>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
