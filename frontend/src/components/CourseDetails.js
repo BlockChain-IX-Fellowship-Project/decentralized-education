@@ -4,7 +4,6 @@ import { ArrowLeft, User,  Play, CheckCircle, Lock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Progress } from "./ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 const levelColors = {
@@ -58,14 +57,13 @@ export default function CourseDetails() {
   const instructor = course.createdBy || course.instructor || "Unknown";
   const instructorBio = course.instructorBio || "";
   const students = course.students || 0;
-  const rating = course.rating || "-";
   const sections = course.sections || [];
   const duration = course.duration || "-";
   const level = course.level || "Beginner";
   const image = course.image || "/placeholder.svg";
   const requirements = course.requirements || [];
   const whatYouWillLearn = course.whatYouWillLearn || [];
-  const progress = course.progress || 0;
+  // const progress = course.progress || 0;
   // For curriculum, fallback to sections if curriculum is not present
   const curriculum = course.curriculum || (Array.isArray(sections)
     ? sections.map((section, idx) => ({
