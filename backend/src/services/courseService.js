@@ -1,7 +1,8 @@
 import Course from '../models/Course.js';
 
-const createCourse = async ({ title, description, createdBy, sections }) => {
-  const course = new Course({ title, description, createdBy, sections });
+const createCourse = async (courseData) => {
+  // Accept all fields from courseData, including instructor and level
+  const course = new Course(courseData);
   await course.save();
   return course;
 };

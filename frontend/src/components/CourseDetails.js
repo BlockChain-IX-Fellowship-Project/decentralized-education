@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, User,  Play, CheckCircle, Lock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -14,9 +14,38 @@ const levelColors = {
 
 export default function CourseDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [watchedItems, setWatchedItems] = useState({});
+  const [activeQuizIdx, setActiveQuizIdx] = useState(null);
+  const [userAnswers, setUserAnswers] = useState({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [sectionStatus, setSectionStatus] = useState({}); // { sectionId: 'completed' | 'incomplete' }
+
+  const handleMarkAsWatched = (sectionIdx, type) => {
+    setWatchedItems(prev => ({ ...prev, [`${sectionIdx}-${type}`]: true }));
+  };
+
+  const handleAnswerSelect = (sectionIdx, qIdx, option) => {
+    setUserAnswers(prev => ({
+      ...prev,
+      [`${sectionIdx}-${qIdx}`]: option
+    }));
+  };
+
+  const handleSubmitQuiz = () => {
+    setQuizSubmitted(true);
+  };
+
+  const handleQuizComplete = (score, total, sectionId) => {
+    if (score / total >= 0.8) { // 4/5 or 80%
+      setSectionStatus(prev => ({ ...prev, [sectionId]: 'completed' }));
+    } else {
+      setSectionStatus(prev => ({ ...prev, [sectionId]: 'incomplete' }));
+    }
+  };
 
   useEffect(() => {
     async function fetchCourse() {
@@ -54,204 +83,113 @@ export default function CourseDetails() {
     );
 
   // Fallbacks for missing backend fields
-  const instructor = course.createdBy || course.instructor || "Unknown";
-  const instructorBio = course.instructorBio || "";
-  const students = course.students || 0;
+  const instructor =  course.instructor
   const sections = course.sections || [];
-  const duration = course.duration || "-";
   const level = course.level || "Beginner";
-  const image = course.image || "/placeholder.svg";
-  const requirements = course.requirements || [];
-  const whatYouWillLearn = course.whatYouWillLearn || [];
-  // const progress = course.progress || 0;
-  // For curriculum, fallback to sections if curriculum is not present
-  const curriculum = course.curriculum || (Array.isArray(sections)
-    ? sections.map((section, idx) => ({
-        id: section._id || idx + 1,
-        title: section.title || `Section ${idx + 1}`,
-        duration: section.duration || "-",
-        completed: false,
-        locked: idx > 0, // Only first section unlocked by default
-      }))
-    : []);
 
-  const handleEnroll = () => {
-    setIsEnrolled(true);
-  };
+  // Calculate progress
+  const completedSections = sections.filter(
+    (section, idx) =>
+      watchedItems[`${idx}-video`] &&
+      section.quizzes &&
+      section.quizzes.length > 0 &&
+      watchedItems[`${idx}-quiz`]
+  ).length;
+  const totalSections = sections.length;
+  const tokensPerSection = 50;
+  const totalTokens = totalSections * tokensPerSection;
+  const earnedTokens = completedSections * tokensPerSection;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            to="/courses"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Browse Courses
-          </Link>
+    <div className="max-w-5xl mx-auto py-8 px-2 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+      <button className="mb-4 text-blue-600 hover:underline flex items-center gap-2" onClick={() => navigate('/dashboard')}>
+        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+      </button>
+      <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 flex flex-col md:flex-row md:items-center md:justify-between border border-blue-100">
+        <div className="flex-1 min-w-0">
+          {/* <h2 className="text-3xl font-extrabold text-gray-900 mb-2">{course.title}</h2> */}
+          <div className="flex items-center gap-3 mb-2">
+  <h2 className="text-3xl font-extrabold text-gray-900">{course.title}</h2>
+  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${levelColors[level]}`}>
+    {level}
+  </span>
+</div>
+          <p className="text-base text-gray-700 mb-3">{course.description}</p>
+          <div className="text-sm text-gray-500 font-semibold mb-2">Instructor: <span className="text-blue-700 font-normal">{instructor}</span></div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-blue-700 font-semibold">Course Progress</span>
+            <span className="text-sm text-blue-700 font-semibold">{completedSections}/{totalSections} sections completed</span>
+          </div>
+          <div className="w-full h-3 bg-gray-200 rounded-full">
+            <div className="h-3 bg-black rounded-full transition-all duration-300" style={{ width: `${(completedSections / totalSections) * 100}%` }}></div>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Course Header */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <Badge className={`${levelColors[level]} mb-3`}>{level}</Badge>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-3">{course.title}</h1>
-                  <p className="text-gray-600 text-lg mb-4">{course.description}</p>
-
-                  <div className="flex items-center gap-6 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <User className="w-4 h-4" />
-                      {instructor}
-                    </div>
-                  </div>
+        <div className="flex flex-col items-center justify-center min-w-[160px] mt-6 md:mt-0 md:ml-8">
+          <div className="bg-gray-100 rounded-full px-8 py-6 text-center shadow text-2xl font-bold text-gray-900 mb-2 flex flex-col items-center">
+            <span>{earnedTokens} / {totalTokens}</span>
+            <span className="text-base font-semibold text-gray-700 mt-1">Tokens</span>
+          </div>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold mb-4 text-blue-900">Course Sections</h3>
+      <div className="flex flex-col gap-4">
+        {sections.length > 0 ? sections.map((section, idx) => {
+          const isLocked = idx > 0 && !watchedItems[`${idx - 1}-video`];
+          const isCompleted = watchedItems[`${idx}-video`] && section.quizzes && section.quizzes.length > 0 && watchedItems[`${idx}-quiz`];
+          return (
+            <div
+              key={section._id || idx}
+              className={`rounded-xl border bg-white border-blue-100 shadow-sm transition-all duration-200 px-6 py-4 mb-4 ${isLocked ? 'opacity-60' : ''} ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
+              style={isLocked ? { pointerEvents: 'none', opacity: 0.6 } : {}}
+            >
+              {/* Header Row: Title, status, tokens */}
+              <div className="flex flex-row items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg shadow">{idx + 1}</span>
+                  <span className="font-bold text-xl text-gray-900">{section.title}</span>
+                  <span className="ml-2 text-xs text-gray-400 font-semibold">{isCompleted ? 'Completed' : isLocked ? 'Locked' : 'Available'}</span>
                 </div>
-                {/* Remove tokens display */}
+                <div className="text-xs font-semibold bg-gray-100 px-3 py-1 rounded-full text-right text-gray-900">{isCompleted ? '50 tokens earned' : '50 tokens available'}</div>
               </div>
-
-              <div className="aspect-video relative overflow-hidden rounded-lg">
-                <img
-                  src={image}
-                  alt={course.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                  <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
-                    <Play className="w-5 h-5 mr-2" />
-                    Preview Course
-                  </Button>
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between w-full">
+                {/* Left: Video and Mark as Watched */}
+                <div className="flex-1 min-w-0 md:pr-8">
+                  <div className="flex items-center gap-2 text-xs text-blue-500 font-semibold mb-1 mt-1"><Play className="w-4 h-4" /> Video Lesson</div>
+                  {section.videos && section.videos.length > 0 ? section.videos.map((video, vIdx) => (
+                    <div style={{ pointerEvents: 'auto', opacity: 1, width: '100%' }} key={video._id || vIdx}>
+                      <video
+                        controls
+                        width="100%"
+                        className="mb-1 rounded-lg border border-blue-200 shadow bg-black"
+                        src={`https://ipfs.io/ipfs/${video.ipfsHash}`}
+                      />
+                    </div>
+                  )) : <div className="text-gray-400 text-xs">No video</div>}
+                  <button
+                    className={`w-full text-xs font-semibold py-2 rounded-lg mt-2 transition-all duration-150 ${watchedItems[`${idx}-video`] ? 'bg-blue-600 text-white cursor-default' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => handleMarkAsWatched(idx, 'video')}
+                    disabled={watchedItems[`${idx}-video`] || isLocked}
+                  >
+                    {watchedItems[`${idx}-video`] ? <span><CheckCircle className="inline w-4 h-4 mr-1" /> Marked as Watched</span> : 'Mark as Watched'}
+                  </button>
+                  <div className="text-xs text-center text-gray-500 mt-1">Click to mark video as watched and unlock quiz</div>
+                </div>
+                {/* Right: Quiz and tokens */}
+                <div className="flex-1 min-w-0 md:pl-8 flex flex-col items-start justify-between mt-6 md:mt-0">
+                  <div className="flex items-center gap-2 text-xs text-purple-500 font-semibold mb-2"><Lock className="w-4 h-4" /> Section Quiz</div>
+                  <button
+                    className={`w-full px-4 py-2 rounded-lg font-semibold transition-all duration-150 mb-2 ${watchedItems[`${idx}-video`] ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                    disabled={!watchedItems[`${idx}-video`] || isLocked}
+                    onClick={() => navigate(`/course/${id}/section/${section._id}/quiz`)}
+                  >
+                    {isCompleted ? 'Quiz Completed' : watchedItems[`${idx}-video`] ? 'Take Quiz' : 'Complete Materials First'}
+                  </button>
+                  <div className="text-xs text-center text-gray-500">Mark the video as watched to unlock the quiz</div>
                 </div>
               </div>
             </div>
-
-            {/* Course Content Tabs */}
-            <Tabs defaultValue="curriculum" className="bg-white rounded-lg shadow-sm">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                <TabsTrigger value="about">About</TabsTrigger>
-                <TabsTrigger value="instructor">Instructor</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="curriculum" className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Course Curriculum</h3>
-                <div className="space-y-5">
-                  {curriculum.map((lesson, index) => (
-                    <div
-                      key={lesson.id}
-                      className={`flex items-center justify-between p-5 rounded-xl ${
-                        lesson.locked
-                          ? "bg-gray-50 text-gray-400"
-                          : "bg-white border border-gray-200 text-gray-900"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          {lesson.completed ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : lesson.locked ? (
-                            <Lock className="w-5 h-5 text-gray-400" />
-                          ) : (
-                            <Play className="w-5 h-5 text-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className={`font-semibold ${lesson.locked ? "text-gray-400" : "text-gray-900"}`}>
-                            {index + 1}. {lesson.title}
-                          </h4>
-                        </div>
-                      </div>
-                      <span className={`text-base font-medium ${lesson.locked ? "text-gray-400" : "text-gray-600"}`}>
-                        {lesson.duration}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="about" className="p-6">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3">What you'll learn</h3>
-                    <ul className="space-y-2">
-                      {whatYouWillLearn.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3">Requirements</h3>
-                    <ul className="space-y-2">
-                      {requirements.map((requirement, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
-                          <span className="text-gray-700">{requirement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="instructor" className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                    {instructor
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">{instructor}</h3>
-                    <p className="text-gray-600 mb-4">{instructorBio}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>⭐ 4.8 instructor rating</span>
-                      <span>👥 {students} students</span>
-                      <span>🎓 12 courses</span>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="bg-white rounded-xl border border-gray-200 shadow-none p-6 flex flex-col items-center">
-              <CardHeader className="w-full p-0 mb-4">
-                <CardTitle className="text-center text-2xl font-bold w-full">Enroll in Course</CardTitle>
-              </CardHeader>
-              <CardContent className="w-full p-0 flex flex-col items-center">
-                <div className="space-y-4 w-full">
-                  <div className="flex justify-between w-full text-base">
-                    <span className="text-gray-600">Duration:</span>
-                    <span className="font-semibold">{duration}</span>
-                  </div>
-                  <div className="flex justify-between w-full text-base">
-                    <span className="text-gray-600">Sections:</span>
-                    <span className="font-semibold">{Array.isArray(sections) ? sections.length : sections}</span>
-                  </div>
-                  <div className="flex justify-between w-full text-base items-center">
-                    <span className="text-gray-600">Level:</span>
-                    <Badge className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium text-sm shadow-none">{level}</Badge>
-                  </div>
-                </div>
-                <Button className="w-full mt-6 bg-black text-white hover:bg-gray-900 text-base font-semibold py-3 rounded-lg" size="lg" onClick={handleEnroll} disabled={isEnrolled}>
-                  {isEnrolled ? "Enrolled ✓" : "Enroll Now"}
-                </Button>
-                <p className="text-xs text-gray-500 text-center mt-4">30-day money-back guarantee</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          );
+        }) : <div className="text-gray-500">No sections found.</div>}
       </div>
     </div>
   );
