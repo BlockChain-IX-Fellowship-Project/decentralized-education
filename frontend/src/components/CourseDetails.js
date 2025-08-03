@@ -8,6 +8,7 @@ import { Card, CardContent } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { getUserProgress } from "../utils/quizApi"
 import { useWeb3Context } from "./hooks/Web3Context"
+import { getUserByWallet, enrollCertificate, getCertificate } from '../utils/userApi';
 
 const levelColors = {
   Beginner: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -22,16 +23,17 @@ const levelGradients = {
 }
 
 export default function CourseDetails() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { account } = useWeb3Context()
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { account } = useWeb3Context();
+  const walletAddress = account || "";
   const [course, setCourse] = useState(null)
   const [loading, setLoading] = useState(true)
   const [userProgress, setUserProgress] = useState(null)
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [enrollName, setEnrollName] = useState("");
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [enrollSuccess, setEnrollSuccess] = useState(false);
+  const [enrollError, setEnrollError] = useState("");
+  const [certificate, setCertificate] = useState(null);
 
   useEffect(() => {
     async function fetchCourse() {
@@ -67,6 +69,18 @@ export default function CourseDetails() {
     document.addEventListener("visibilitychange", handleVisibility)
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [account, course?._id])
+
+  useEffect(() => {
+    async function fetchCertificate() {
+      if (walletAddress && course?._id) {
+        const cert = await getCertificate({ walletAddress, courseId: course._id });
+        setCertificate(cert);
+      } else {
+        setCertificate(null);
+      }
+    }
+    fetchCertificate();
+  }, [walletAddress, course?._id]);
 
   if (loading)
     return (
@@ -109,33 +123,46 @@ export default function CourseDetails() {
   const scorePerSection = level === "Beginner" ? 50 : level === "Intermediate" ? 70 : 100
   const totalScore = totalSections * scorePerSection
   const earnedScore = userProgress?.totalScore || 0
-  const walletAddress = account || "";
   const isCourseCompleted = userProgress?.courseStatus === "completed";
 
-  async function handleEnroll(e) {
-    e.preventDefault();
+  async function handleGetCertificate() {
     setEnrollLoading(true);
     setEnrollSuccess(false);
+    setEnrollError("");
     try {
-      const res = await fetch("http://localhost:5000/api/certificates/enroll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          learnerName: enrollName,
-          walletAddress,
-          courseId: course._id,
-        }),
+      const user = await getUserByWallet(walletAddress);
+      if (!user || !user.name) {
+        setEnrollError("User name not found. Please update your profile.");
+        setEnrollLoading(false);
+        return;
+      }
+      const data = await enrollCertificate({
+        learnerName: user.name,
+        walletAddress,
+        courseId: course._id,
       });
-      const data = await res.json();
-      if (data.success) {
+      if (data.success && data.ipfsUrl) {
         setEnrollSuccess(true);
+        setEnrollError("");
+        window.open(data.ipfsUrl, "_blank");
+        // Re-fetch certificate so button updates
+        const cert = await getCertificate({ walletAddress, courseId: course._id });
+        setCertificate(cert);
       } else {
         setEnrollSuccess(false);
+        setEnrollError("Certificate request failed. Please try again.");
       }
     } catch (err) {
       setEnrollSuccess(false);
+      setEnrollError("Certificate request failed. Please try again.");
     }
     setEnrollLoading(false);
+  }
+
+  function handleViewCertificate() {
+    if (certificate?.downloadUrl) {
+      window.open(certificate.downloadUrl, "_blank");
+    }
   }
 
   return (
@@ -152,63 +179,29 @@ export default function CourseDetails() {
       {/* Show certificate button only if completed */}
       {isCourseCompleted && (
         <div className="mb-6 flex justify-end">
-          <Button
-            className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:scale-105 transition-all"
-            onClick={() => setShowEnrollModal(true)}
-          >
-            Get Your Certificate
-          </Button>
+          {certificate ? (
+            <Button
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:scale-105 transition-all"
+              onClick={handleViewCertificate}
+            >
+              View Certificate
+            </Button>
+          ) : (
+            <Button
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:scale-105 transition-all"
+              onClick={handleGetCertificate}
+              disabled={enrollLoading}
+            >
+              {enrollLoading ? "Processing..." : "Get Your Certificate"}
+            </Button>
+          )}
         </div>
       )}
-
-      {/* Enroll Modal (for certificate) */}
-      {showEnrollModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md relative">
-            <button
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl"
-              onClick={() => setShowEnrollModal(false)}
-            >
-              &times;
-            </button>
-            <h2 className="text-2xl font-bold mb-4 text-center">Get Certificate for {course.title}</h2>
-            <form onSubmit={handleEnroll} className="space-y-4">
-              <div>
-                <label className="block font-semibold mb-1">Your Name</label>
-                <input
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="Enter your name"
-                  value={enrollName}
-                  onChange={e => setEnrollName(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Wallet Address</label>
-                <input
-                  className="w-full border rounded px-3 py-2 bg-gray-100"
-                  value={walletAddress}
-                  readOnly
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-green-600 text-white py-2 rounded font-semibold mt-2"
-                disabled={enrollLoading || !enrollName}
-              >
-                {enrollLoading ? "Processing..." : "Get Certificate"}
-              </Button>
-              {enrollSuccess && (
-                <div className="text-green-600 text-center mt-2">
-                  Certificate request successful!
-                </div>
-              )}
-              {!enrollSuccess && enrollLoading === false && (
-                <div className="text-red-600 text-center mt-2">Certificate request failed. Please try again.</div>
-              )}
-            </form>
-          </div>
-        </div>
+      {enrollSuccess && (
+        <div className="text-green-600 text-center mb-4">Certificate request successful!</div>
+      )}
+      {enrollError && (
+        <div className="text-red-600 text-center mb-4">{enrollError}</div>
       )}
 
       {/* Course Header Card */}

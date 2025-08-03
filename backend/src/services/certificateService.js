@@ -2,6 +2,8 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pinataService from './vdoService.js';
+import Certificate from '../models/Certificate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -88,6 +90,53 @@ export function generateCertificate({
   return doc;
 }
 
+export async function createAndStoreCertificate({ learnerName, walletAddress, course, courseId }) {
+  // Check for existing certificate
+  const existing = await Certificate.findOne({ walletAddress, courseId });
+  if (existing) {
+    return { ipfsUrl: existing.downloadUrl };
+  }
+  const issueDate = new Date().toISOString().slice(0, 10);
+  const outputPath = path.join(process.cwd(), 'uploads', `${learnerName}_${courseId}_certificate.pdf`);
+  // Generate PDF (wait for finish)
+  await new Promise((resolve, reject) => {
+    try {
+      const doc = generateCertificate({
+        learnerName,
+        courseName: course.title,
+        walletAddress,
+        issueDate,
+        outputPath,
+      });
+      doc.on('end', resolve);
+      doc.on('error', reject);
+    } catch (err) {
+      reject(err);
+    }
+  });
+  // Upload to Pinata
+  let ipfsHash = '';
+  let ipfsUrl = '';
+  try {
+    const pinataResult = await pinataService.uploadToPinata(outputPath, `${learnerName}_${courseId}_certificate.pdf`);
+    ipfsHash = pinataResult.ipfsHash;
+    ipfsUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+  } catch (err) {
+    ipfsUrl = `/uploads/${learnerName}_${courseId}_certificate.pdf`;
+  }
+  // Save metadata in DB
+  await Certificate.create({
+    walletAddress,
+    courseId,
+    learnerName,
+    issueDate,
+    ipfsHash,
+    downloadUrl: ipfsUrl,
+  });
+  return { ipfsUrl };
+}
+
 export default {
-  generateCertificate
+  generateCertificate,
+  createAndStoreCertificate
 };

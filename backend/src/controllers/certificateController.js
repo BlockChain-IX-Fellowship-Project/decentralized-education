@@ -1,7 +1,6 @@
 // backend/src/controllers/certificateController.js
 import Course from '../models/Course.js';
-import { generateCertificate } from '../services/certificateService.js';
-import path from 'path';
+import certificateService from '../services/certificateService.js';
 
 export const enrollCertificate = async (req, res) => {
   try {
@@ -13,26 +12,14 @@ export const enrollCertificate = async (req, res) => {
     if (!course) {
       return res.status(404).json({ error: 'Course not found.' });
     }
-    const issueDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const outputPath = path.join(process.cwd(), 'uploads', `${learnerName}_${courseId}_certificate.pdf`);
-    // PDFKit is async, so wait for file to finish writing
-    await new Promise((resolve, reject) => {
-      try {
-        const doc = generateCertificate({
-          learnerName,
-          courseName: course.title,
-          walletAddress,
-          issueDate,
-          outputPath,
-        });
-        // Listen for finish event
-        doc.on('end', resolve);
-        doc.on('error', reject);
-      } catch (err) {
-        reject(err);
-      }
+    // Use the service to handle all logic
+    const { ipfsUrl } = await certificateService.createAndStoreCertificate({
+      learnerName,
+      walletAddress,
+      course,
+      courseId,
     });
-    res.json({ success: true, message: 'Certificate generated.', downloadUrl: `/uploads/${learnerName}_${courseId}_certificate.pdf` });
+    res.json({ success: true, message: 'Certificate generated.', ipfsUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

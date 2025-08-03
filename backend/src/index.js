@@ -8,6 +8,7 @@ import courseRoutes from './routes/courseRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
 import vdoUpload from './routes/vdoUpload.js';
 import certificateRoutes from './routes/certificateRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import path from 'path';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/upload', vdoUpload); 
 app.use('/api/sections',sectionRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
