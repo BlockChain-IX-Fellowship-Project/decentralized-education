@@ -12,7 +12,20 @@ export default function Wallet() {
 
   useEffect(() => {
     if (account) {
-      navigate("/");
+      const hasSelectedRole = localStorage.getItem("hasSelectedRole");
+      const userRole = localStorage.getItem("userRole");
+      
+      if (hasSelectedRole) {
+        if (userRole === "student") {
+          navigate("/student/dashboard");
+        } else if (userRole === "instructor") {
+          navigate("/instructor/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
+        navigate("/role-selection");
+      }
     }
   }, [account, navigate]);
 

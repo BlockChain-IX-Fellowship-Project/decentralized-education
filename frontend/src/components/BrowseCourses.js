@@ -38,7 +38,7 @@ export default function BrowseCoursesPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors">
+          <Link to="/student/dashboard" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Link>
