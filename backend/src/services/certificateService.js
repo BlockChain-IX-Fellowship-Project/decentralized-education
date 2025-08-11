@@ -4,8 +4,17 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import pinataService from './vdoService.js';
 import Certificate from '../models/Certificate.js';
+import { ethers } from 'ethers';
+import dotenv from 'dotenv';
+dotenv.config();
+const certificateAbi = JSON.parse(fs.readFileSync(new URL('../abi/Certificate.json', import.meta.url)));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Replace with your deployed contract address
+const CERTIFICATE_CONTRACT_ADDRESS = process.env.CERTIFICATE_CONTRACT_ADDRESS;
+const SEPOLIA_RPC_URL = process.env.NETWORK_URL;
+const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
 
 /**
  * Generate a personalized certificate PDF using the template image and dynamic data.
@@ -136,7 +145,54 @@ export async function createAndStoreCertificate({ learnerName, walletAddress, co
   return { ipfsUrl };
 }
 
+/**
+ * Calls the Certificate smart contract to issue a certificate on-chain.
+ * @param {string} courseId - The course ID
+ * @param {string} ipfsHash - The IPFS hash of the certificate
+ * @returns {Promise<string>} - The transaction hash
+ */
+export async function issueCertificateOnChain(courseId, ipfsHash) {
+  if (!CERTIFICATE_CONTRACT_ADDRESS || !SEPOLIA_RPC_URL || !WALLET_PRIVATE_KEY) {
+    throw new Error('Blockchain environment variables are not set');
+  }
+  const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
+  const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+  const contract = new ethers.Contract(
+    CERTIFICATE_CONTRACT_ADDRESS,
+    certificateAbi,
+    wallet
+  );
+  const tx = await contract.issueCertificate(courseId, ipfsHash);
+  await tx.wait(); // Wait for confirmation
+  return tx.hash;
+}
+
+/**
+ * Calls the Certificate smart contract to verify a certificate on-chain.
+ * @param {string} walletAddress - The user's wallet address
+ * @param {string} courseId - The course ID
+ * @returns {Promise<{ipfsHash: string, valid: boolean}>}
+ */
+export async function verifyCertificateOnChain(walletAddress, courseId) {
+  if (!CERTIFICATE_CONTRACT_ADDRESS || !SEPOLIA_RPC_URL) {
+    throw new Error('Blockchain environment variables are not set');
+  }
+  console.log('Verifying certificate on-chain for:', walletAddress, courseId);
+  const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
+  const contract = new ethers.Contract(
+    CERTIFICATE_CONTRACT_ADDRESS,
+    certificateAbi,
+    provider
+  );
+  const result = await contract.verifyCertificate(walletAddress, courseId);
+  console.log('verifyCertificate result:', result);
+  // result is [ipfsHash, valid]
+  return { ipfsHash: result.ipfsHash, valid: result.valid };
+}
+
 export default {
   generateCertificate,
-  createAndStoreCertificate
+  createAndStoreCertificate,
+  issueCertificateOnChain,
+  verifyCertificateOnChain
 };
