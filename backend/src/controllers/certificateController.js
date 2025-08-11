@@ -45,3 +45,16 @@ export const enrollCertificate = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const verifyCertificate = async (req, res) => {
+  try {
+    const { walletAddress, courseId } = req.query;
+    if (!walletAddress || !courseId) {
+      return res.status(400).json({ error: 'Missing walletAddress or courseId' });
+    }
+    const result = await certificateService.verifyCertificateOnChain(walletAddress, courseId);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
