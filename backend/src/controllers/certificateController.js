@@ -31,8 +31,8 @@ export const enrollCertificate = async (req, res) => {
     let txHash = null;
     if (ipfsHash) {
       try {
-        console.log('Attempting to call issueCertificateOnChain with:', courseId, ipfsHash);
-        txHash = await certificateService.issueCertificateOnChain(courseId, ipfsHash);
+        console.log('Attempting to call issueCertificateOnChain with:', walletAddress, courseId, ipfsHash);
+        txHash = await certificateService.issueCertificateOnChain(walletAddress, courseId, ipfsHash);
         console.log('Blockchain txHash:', txHash);
       } catch (err) {
         console.error('Blockchain certificate issue error:', err);

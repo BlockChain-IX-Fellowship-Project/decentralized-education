@@ -1,4 +1,4 @@
-[
+  [
     {
       "anonymous": false,
       "inputs": [
@@ -60,6 +60,11 @@
     },
     {
       "inputs": [
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
         {
           "internalType": "string",
           "name": "courseId",

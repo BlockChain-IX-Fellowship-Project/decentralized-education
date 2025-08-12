@@ -14,13 +14,14 @@ contract Certificate {
     event CertificateIssued(address indexed user, string courseId, string ipfsHash);
 
     function issueCertificate(
+        address recipient,
         string memory courseId,
         string memory ipfsHash
     ) public {
-        require(!certificates[msg.sender][courseId].exists, "Certificate already exists");
+        require(!certificates[recipient][courseId].exists, "Certificate already exists");
 
-        certificates[msg.sender][courseId] = Cert(ipfsHash, courseId, true);
-        emit CertificateIssued(msg.sender, courseId, ipfsHash);
+        certificates[recipient][courseId] = Cert(ipfsHash, courseId, true);
+        emit CertificateIssued(recipient, courseId, ipfsHash);
     }
 
     function verifyCertificate(
