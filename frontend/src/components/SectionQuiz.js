@@ -39,26 +39,25 @@ export default function SectionQuiz() {
   const q = quiz[currentQ] || {};
   const score = quiz.filter((q, idx) => userAnswers[idx] === q.correctAnswer).length;
 
-  useEffect(() => {
-    if (showResults && !hasSavedProgress && quiz.length > 0) {
-      const userId = account || window.localStorage.getItem("userAddress") || "demo-user";
-      updateSectionProgress({
-        userId,
-        courseId,
-        sectionId,
-        score,
-        total: quiz.length,
-      });
-      setHasSavedProgress(true);
-    }
-  }, [showResults, hasSavedProgress, courseId, sectionId, score, quiz.length, account]);
-
-  const handleAnswer = (option) => {
-    setUserAnswers({ ...userAnswers, [currentQ]: option });
+  const handleAnswer = async (option) => {
+    setUserAnswers((prev) => ({ ...prev, [currentQ]: option }));
     if (currentQ + 1 < quiz.length) {
       setCurrentQ(currentQ + 1);
     } else {
+      // Await progress update before showing results
+      const userId = account || window.localStorage.getItem("userAddress") || "demo-user";
+      await updateSectionProgress({
+        userId,
+        courseId,
+        sectionId,
+        score: quiz.filter((q, idx) => {
+          const ans = idx === currentQ ? option : userAnswers[idx];
+          return ans === q.correctAnswer;
+        }).length,
+        total: quiz.length,
+      });
       setShowResults(true);
+      setHasSavedProgress(true);
     }
   };
 

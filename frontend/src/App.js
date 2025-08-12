@@ -8,6 +8,7 @@ import Profile from './components/Profile';
 import Wallet from './components/common/Wallet';
 import { Web3Provider, useWeb3Context } from './components/hooks/Web3Context';
 import SectionQuiz from './components/SectionQuiz';
+import CertificateVerifier from './components/CertificateVerifier';
 
 function DashboardWrapper() {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ export default function App() {
               </RequireWallet>
             } />
             <Route path="/course/:courseId/section/:sectionId/quiz" element={<SectionQuiz />} />
+            <Route path="/verify-certificate" element={<CertificateVerifier />} />
           </Routes>
         </div>
       </Router>

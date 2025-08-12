@@ -34,7 +34,7 @@ export default function BrowseCoursesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -118,39 +118,25 @@ export default function BrowseCoursesPage() {
         {loading ? (
           <div className="text-blue-600 font-semibold text-center py-12">Loading courses...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filteredCourses.map((course) => (
               <Link key={course._id || course.id} to={`/course/${course._id || course.id}`}>
-                <Card className="bg-white h-full hover:shadow-lg transition-shadow cursor-pointer group">
-                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                    <img
-                      src={course.image || "/placeholder.svg"}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <Badge className={levelColors[course.level] || "bg-gray-100 text-gray-800"}>{course.level}</Badge>
+                <Card className="relative bg-white h-full hover:shadow-2xl transition-shadow cursor-pointer group border border-gray-200 hover:border-blue-400 p-8 rounded-3xl min-h-[280px] flex flex-col justify-between transform hover:scale-[1.025] duration-200 shadow-green-200">
+                  <CardHeader className="pb-4 pt-6 flex flex-col items-center text-center">
+                    <div className="flex items-center gap-3 mb-3">
+                      <CardTitle className="text-2xl font-extrabold group-hover:text-blue-600 transition-colors">{course.title}</CardTitle>
+                      <Badge className={levelColors[course.level] || "bg-gray-100 text-gray-800"} style={{fontSize: '1rem', padding: '0.4em 1em'}}>{course.level}</Badge>
                     </div>
-                  </div>
-
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">{course.title}</CardTitle>
-                    <CardDescription className="text-sm line-clamp-2">{course.description}</CardDescription>
+                    <CardDescription className="text-base text-gray-600 line-clamp-2 mb-2 font-medium">{course.description}</CardDescription>
                   </CardHeader>
-
-                  <CardContent className="pt-0">
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {course.instructor || "Unknown"}
-                      </div>
+                  <CardContent className="pt-0 flex flex-col gap-4 mt-auto">
+                    <div className="flex items-center gap-2 text-base text-gray-500 justify-center">
+                      <User className="w-5 h-5" />
+                      {course.instructor || "Unknown"}
                     </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4" />
-                        {course.sections?.length || course.sections || 0} sections
-                      </div>
+                    <div className="flex items-center gap-2 text-base text-gray-500 justify-center">
+                      <BookOpen className="w-5 h-5" />
+                      {course.sections?.length || course.sections || 0} sections
                     </div>
                   </CardContent>
                 </Card>
