@@ -1,6 +1,6 @@
 // backend/src/routes/certificateRoutes.js
 import express from 'express';
-import { enrollCertificate } from '../controllers/certificateController.js';
+import { enrollCertificate, verifyCertificate } from '../controllers/certificateController.js';
 import Certificate from '../models/Certificate.js';
 
 const router = express.Router();
@@ -14,5 +14,7 @@ router.get('/user', async (req, res) => {
   const cert = await Certificate.findOne({ walletAddress, courseId });
   res.json(cert || null);
 });
+
+router.get('/verify', verifyCertificate);
 
 export default router;

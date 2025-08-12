@@ -68,7 +68,7 @@ const courseController = {
             try {
               console.log('Whisper transcript extraction: Trying to extract from', localPath);
               transcript = await whisperService.extractTranscript(localPath, section.ipfsHash);
-              console.log('Whisper transcript output:', transcript);
+              // console.log('Whisper transcript output:', transcript);
             } catch (err) {
               console.error('Whisper transcript extraction error:', err);
               transcript = '';
@@ -80,7 +80,7 @@ const courseController = {
           try {
             console.log('Gemini quiz generation: Using transcript:', transcript.slice(0, 200));
             quizzes = await generateQuizWithGemini(transcript);
-            console.log('Gemini quiz output:', quizzes);
+            // console.log('Gemini quiz output:', quizzes);
           } catch (err) {
             console.error('Gemini quiz generation error:', err);
             quizzes = [];
