@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Button } from "./ui/button"
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("ongoing")
@@ -57,12 +58,20 @@ const StudentDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => navigate("/courses")}
-                className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-200"
+              {/* Profile Button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-2 hover:bg-gray-100"
+                onClick={() => navigate("/profile")}
               >
-                Browse Courses
-              </button>
+                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <span className="hidden sm:inline">Liza Maharjan</span>
+              </Button>
             </div>
           </div>
         </div>
