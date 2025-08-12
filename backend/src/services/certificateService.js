@@ -147,11 +147,12 @@ export async function createAndStoreCertificate({ learnerName, walletAddress, co
 
 /**
  * Calls the Certificate smart contract to issue a certificate on-chain.
+ * @param {string} recipient - The learner's wallet address
  * @param {string} courseId - The course ID
  * @param {string} ipfsHash - The IPFS hash of the certificate
  * @returns {Promise<string>} - The transaction hash
  */
-export async function issueCertificateOnChain(courseId, ipfsHash) {
+export async function issueCertificateOnChain(recipient, courseId, ipfsHash) {
   if (!CERTIFICATE_CONTRACT_ADDRESS || !SEPOLIA_RPC_URL || !WALLET_PRIVATE_KEY) {
     throw new Error('Blockchain environment variables are not set');
   }
@@ -162,7 +163,7 @@ export async function issueCertificateOnChain(courseId, ipfsHash) {
     certificateAbi,
     wallet
   );
-  const tx = await contract.issueCertificate(courseId, ipfsHash);
+  const tx = await contract.issueCertificate(recipient, courseId, ipfsHash);
   await tx.wait(); // Wait for confirmation
   return tx.hash;
 }
