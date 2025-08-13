@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "./ui/button"
 
-const StudentDashboard = () => {
+const StudentDashboard = ({ onAddCourse }) => {
   const [activeTab, setActiveTab] = useState("ongoing")
   const navigate = useNavigate()
 
@@ -100,15 +100,18 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div 
+            onClick={onAddCourse}
+            className="bg-white rounded-xl p-6 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Learning Progress</h3>
-                <p className="text-gray-600">Track your course completion</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Add New Course</h3>
+                <p className="text-gray-600">Share your knowledge with the community</p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">75%</div>
-                <div className="text-sm text-gray-500">Average Progress</div>
+                <div className="text-2xl font-bold text-gray-900">+</div>
+                <div className="text-sm text-gray-500">Create Course</div>
               </div>
             </div>
           </div>
