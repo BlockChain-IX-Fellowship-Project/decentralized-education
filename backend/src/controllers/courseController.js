@@ -121,6 +121,45 @@ const courseController = {
       res.status(500).json({ error: err.message });
     }
   },
+
+  // Async processing status store (in-memory for demo, use DB for production)
+  processingStatus: {},
+
+  startProcessing: async (req, res) => {
+    // POST /api/courses/process
+    // Body: { ipfsHash, sectionTitle, videoId }
+    try {
+      const { ipfsHash, sectionTitle, videoId } = req.body;
+      const processId = `${ipfsHash}_${Date.now()}`;
+      courseController.processingStatus[processId] = { status: 'processing', transcript: '', quizzes: [] };
+      // Start async processing
+      (async () => {
+        let transcript = '';
+        let quizzes = [];
+        let localPath = '';
+        try {
+          localPath = await whisperService.downloadMp4FromIPFS(ipfsHash);
+          transcript = await whisperService.extractTranscript(localPath, ipfsHash);
+          quizzes = await generateQuizWithGemini(transcript);
+          courseController.processingStatus[processId] = { status: 'done', transcript, quizzes };
+        } catch (err) {
+          courseController.processingStatus[processId] = { status: 'error', error: err.message };
+        }
+      })();
+      res.json({ processId, status: 'processing' });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
+  getProcessingStatus: async (req, res) => {
+    // GET /api/courses/process/:processId/status
+    const { processId } = req.params;
+    if (!courseController.processingStatus[processId]) {
+      return res.status(404).json({ status: 'not_found' });
+    }
+    res.json(courseController.processingStatus[processId]);
+  },
 };
 
 export default courseController;

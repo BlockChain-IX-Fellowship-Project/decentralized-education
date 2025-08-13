@@ -48,28 +48,58 @@ export default function CourseForm({ onBack }) {
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       let ipfsHash = '';
+      let videoId = '';
       if (section.videoFile) {
         ipfsHash = await uploadVideoToIPFS(section.videoFile);
+        // Optionally, get videoId from backend if returned
+      }
+      // Start async processing for transcript/quiz
+      let processId = '';
+      let transcript = '';
+      let quizzes = [];
+      try {
+        const { processId: pid } = await import('../utils/startProcessing').then(m => m.startProcessing({ ipfsHash, sectionTitle: section.title, videoId }));
+        processId = pid;
+        // Poll for status
+        let status = 'processing';
+        let pollCount = 0;
+        while (status === 'processing' && pollCount < 360) { // max 30 min
+          await new Promise(r => setTimeout(r, 5000)); // 5s interval
+          const result = await import('../utils/startProcessing').then(m => m.getProcessingStatus(processId));
+          status = result.status;
+          if (status === 'done') {
+            transcript = result.transcript;
+            quizzes = result.quizzes;
+          } else if (status === 'error') {
+            throw new Error(result.error);
+          }
+          pollCount++;
+        }
+      } catch (err) {
+        setLoading(false);
+        console.error('Error processing section:', err);
+        return;
       }
       ipfsSections.push({
         title: section.title,
         docUrl: section.docUrl,
         ipfsHash,
+        transcript,
+        quizzes,
       });
     }
     const courseData = {
       title: courseTitle,
       description: courseDescription,
-      createdBy: account, // Use actual wallet address
+      createdBy: account,
       instructor,
       level,
       sections: ipfsSections,
     };
     try {
       const data = await createFullCourse(courseData);
-      console.log('Course created:', data);
       setLoading(false);
-      onBack(); // Redirect to dashboard after success
+      onBack();
     } catch (err) {
       setLoading(false);
       console.error('Error creating course:', err);
