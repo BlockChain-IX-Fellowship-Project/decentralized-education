@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import CourseForm from './components/CourseForm';
 import CourseDetails from './components/CourseDetails';
 import BrowseCourses from './components/BrowseCourses';
+import Profile from './components/Profile';
 import Wallet from './components/common/Wallet';
 import { Web3Provider, useWeb3Context } from './components/hooks/Web3Context';
 import SectionQuiz from './components/SectionQuiz';
@@ -74,6 +75,11 @@ export default function App() {
             <Route path="/courses" element={
               <RequireWallet>
                 <BrowseCourses />
+              </RequireWallet>
+            } />
+            <Route path="/profile" element={
+              <RequireWallet>
+                <Profile />
               </RequireWallet>
             } />
             <Route path="/course/:courseId/section/:sectionId/quiz" element={<SectionQuiz />} />
