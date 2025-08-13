@@ -4,8 +4,6 @@ import fs from 'fs';
 import PinataClient from '@pinata/sdk';
 
 // Debug: Log environment variables
-console.log('PINATA_API_KEY:', process.env.PINATA_API_KEY);
-console.log('PINATA_API_SECRET:', process.env.PINATA_API_SECRET);
 
 const pinata = new PinataClient(process.env.PINATA_API_KEY, process.env.PINATA_API_SECRET);
 

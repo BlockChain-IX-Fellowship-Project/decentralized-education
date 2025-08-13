@@ -44,20 +44,22 @@ const courseController = {
         let quizzes = [];
         let localPath = '';
         if (section.ipfsHash) {
-          const videoDoc = new Video({
-            fileName: section.ipfsHash,
-            originalName: section.title,
-            ipfsHash: section.ipfsHash,
-            uploader: createdBy || 'unknown',
-          });
-          await videoDoc.save();
-          videoId = videoDoc._id;
+          try {
+            const videoDoc = new Video({
+              fileName: section.ipfsHash,
+              originalName: section.title,
+              ipfsHash: section.ipfsHash,
+              uploader: createdBy || 'unknown',
+            });
+            await videoDoc.save();
+            videoId = videoDoc._id;
+          } catch (err) {
+            console.error('Error saving video document:', err);
+          }
 
           // Download mp4 from IPFS to uploads folder
           try {
-            console.log('Downloading mp4 from IPFS:', section.ipfsHash);
             localPath = await whisperService.downloadMp4FromIPFS(section.ipfsHash);
-            console.log('Downloaded mp4 to:', localPath);
           } catch (err) {
             console.error('Error downloading mp4 from IPFS:', err);
             localPath = '';
@@ -66,9 +68,7 @@ const courseController = {
           // 1. Extract transcript from mp4 using Whisper
           if (localPath) {
             try {
-              console.log('Whisper transcript extraction: Trying to extract from', localPath);
               transcript = await whisperService.extractTranscript(localPath, section.ipfsHash);
-              // console.log('Whisper transcript output:', transcript);
             } catch (err) {
               console.error('Whisper transcript extraction error:', err);
               transcript = '';
@@ -78,38 +78,46 @@ const courseController = {
         // 2. Generate quizzes using Gemini API
         if (transcript) {
           try {
-            console.log('Gemini quiz generation: Using transcript:', transcript.slice(0, 200));
             quizzes = await generateQuizWithGemini(transcript);
-            // console.log('Gemini quiz output:', quizzes);
           } catch (err) {
             console.error('Gemini quiz generation error:', err);
             quizzes = [];
           }
         }
         // 3. Create Section document
-        const sectionDoc = new Section({
-          title: section.title,
-          videos: videoId ? [videoId] : [],
-          quizzes,
-        });
-        await sectionDoc.save();
-        sectionIds.push(sectionDoc._id);
+        try {
+          const sectionDoc = new Section({
+            title: section.title,
+            videos: videoId ? [videoId] : [],
+            quizzes,
+          });
+          await sectionDoc.save();
+          sectionIds.push(sectionDoc._id);
+        } catch (err) {
+          console.error('Error saving Section document:', err);
+        }
       }
       // 4. Create Course document
-      const course = await courseService.createCourse({
-        title,
-        description,
-        createdBy,
-        instructor,
-        level,
-        sections: sectionIds,
-      });
-      await course.populate({
-        path: 'sections',
-        populate: { path: 'videos' }
-      });
-      res.status(201).json(course);
+      try {
+        const course = await courseService.createCourse({
+          title,
+          description,
+          createdBy,
+          instructor,
+          level,
+          sections: sectionIds,
+        });
+        await course.populate({
+          path: 'sections',
+          populate: { path: 'videos' }
+        });
+        res.status(201).json(course);
+      } catch (err) {
+        console.error('Error saving Course document:', err);
+        res.status(500).json({ error: err.message });
+      }
     } catch (err) {
+      console.error('createFullCourse: top-level error:', err);
       res.status(500).json({ error: err.message });
     }
   },
