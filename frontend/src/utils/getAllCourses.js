@@ -5,7 +5,9 @@
  * @returns {Promise<Array>} - Array of course objects
  */
 export async function getAllCourses() {
-  const res = await fetch('http://localhost:5000/api/courses');
+const BASE_URL = process.env.REACT_APP_BASE_URL;
+
+  const res = await fetch(`${BASE_URL}/api/courses`);
   if (!res.ok) throw new Error('Failed to fetch courses');
   return await res.json();
 }

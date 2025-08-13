@@ -13,6 +13,7 @@ export default function SectionQuiz() {
   const [userAnswers, setUserAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
+const BASE_URL = process.env.REACT_APP_BASE_URL;
 
   useEffect(() => {
     if (account) {
@@ -23,7 +24,7 @@ export default function SectionQuiz() {
   useEffect(() => {
     async function fetchSection() {
       try {
-        const res = await fetch(`http://localhost:5000/api/courses/${courseId}`);
+        const res = await fetch(`${BASE_URL}/api/courses/${courseId}`);
         const data = await res.json();
         const foundSection = data.sections.find((s) => s._id === sectionId);
         setSection(foundSection);

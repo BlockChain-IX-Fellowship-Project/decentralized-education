@@ -5,10 +5,11 @@
  * @param {File} videoFile - The video file to upload.
  * @returns {Promise<string>} - The IPFS hash returned by the backend.
  */
+const BASE_URL = process.env.REACT_APP_BASE_URL;
 export async function uploadVideoToIPFS(videoFile) {
   const formData = new FormData();
   formData.append('video', videoFile);
-const res = await fetch('http://localhost:5000/api/upload', {
+  const res = await fetch(`${BASE_URL}/api/upload`, {
     method: 'POST',
     body: formData,
   });

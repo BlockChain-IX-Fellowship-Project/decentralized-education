@@ -34,12 +34,13 @@ export default function CourseDetails() {
   const [enrollSuccess, setEnrollSuccess] = useState(false);
   const [enrollError, setEnrollError] = useState("");
   const [certificate, setCertificate] = useState(null);
+const BASE_URL = process.env.REACT_APP_BASE_URL;
 
   useEffect(() => {
     async function fetchCourse() {
       setLoading(true)
       try {
-        const res = await fetch(`http://localhost:5000/api/courses/${id}`)
+        const res = await fetch(`${BASE_URL}/api/courses/${id}`)
         if (!res.ok) throw new Error("Failed to fetch course")
         const data = await res.json()
         setCourse(data)

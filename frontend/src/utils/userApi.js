@@ -1,6 +1,6 @@
 // Utility functions for user API calls
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = process.env.REACT_APP_BASE_URL;
 
 export async function getUserByWallet(walletAddress) {
   const res = await fetch(`${BASE_URL}/api/users/${walletAddress}`);
