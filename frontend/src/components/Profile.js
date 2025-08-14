@@ -75,9 +75,9 @@ export default function ProfilePage() {
         const certs = await getUserCertificates(account)
         const mapped = certs.map(c => ({
           id: c._id,
-          courseName: c.courseId?.title || c.courseId || 'Course',
+          courseName: c.courseId?.title || 'Course',
           issueDate: c.issueDate ? new Date(c.issueDate).toISOString().slice(0,10) : '',
-          instructor: '',
+          instructor: c.courseId?.instructor || '',
           tokensEarned: undefined,
           certificateUrl: c.downloadUrl || (c.ipfsHash ? `https://gateway.pinata.cloud/ipfs/${c.ipfsHash}` : ''),
         }))

@@ -11,7 +11,8 @@ router.post('/enroll', enrollCertificate);
 router.get('/user', async (req, res) => {
   const { walletAddress, courseId } = req.query;
   if (!walletAddress || !courseId) return res.status(400).json({ error: 'Missing walletAddress or courseId' });
-  const cert = await Certificate.findOne({ walletAddress, courseId });
+  const cert = await Certificate.findOne({ walletAddress, courseId })
+    .populate('courseId', 'title instructor');
   res.json(cert || null);
 });
 
@@ -21,7 +22,9 @@ router.get('/verify', verifyCertificate);
 router.get('/by-user/:walletAddress', async (req, res) => {
   try {
     const { walletAddress } = req.params;
-    const certs = await Certificate.find({ walletAddress }).sort({ issueDate: -1 });
+    const certs = await Certificate.find({ walletAddress })
+      .sort({ issueDate: -1 })
+      .populate('courseId', 'title instructor');
     res.json(certs);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch certificates' });
