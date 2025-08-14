@@ -1,12 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "./ui/button"
+import { useWeb3Context } from "./hooks/Web3Context"
+import { getUserByWallet } from "../utils/userApi"
+import { getDashboardSummary } from "../utils/dashboardApi"
 
 const StudentDashboard = ({ onAddCourse }) => {
   const [activeTab, setActiveTab] = useState("ongoing")
   const navigate = useNavigate()
+  const { account } = useWeb3Context()
+  const [userName, setUserName] = useState("")
+  const [summary, setSummary] = useState({ totalTokens: 0, ongoingCourses: [], completedCourses: [] })
+
+  useEffect(() => {
+    async function fetchUser() {
+      if (!account) return
+      try {
+        const user = await getUserByWallet(account)
+        const shortAddr = `${account.slice(0, 6)}...${account.slice(-4)}`
+        setUserName(user?.name || shortAddr)
+      } catch (e) {
+        const shortAddr = `${account.slice(0, 6)}...${account.slice(-4)}`
+        setUserName(shortAddr)
+      }
+    }
+    fetchUser()
+  }, [account])
+
+  useEffect(() => {
+    async function fetchSummary() {
+      if (!account) return
+      try {
+        const data = await getDashboardSummary(account)
+        setSummary(data)
+      } catch (e) {
+        setSummary({ totalTokens: 0, ongoingCourses: [], completedCourses: [] })
+      }
+    }
+    fetchSummary()
+  }, [account])
 
   const ongoingCourses = [
     {
@@ -54,7 +88,7 @@ const StudentDashboard = ({ onAddCourse }) => {
                 <svg className="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
-                <span className="text-gray-600">550 Tokens Earned</span>
+                <span className="text-gray-600">{summary.totalTokens} Tokens Earned</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -70,7 +104,7 @@ const StudentDashboard = ({ onAddCourse }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <span className="hidden sm:inline">Liza Maharjan</span>
+                <span className="hidden sm:inline">{userName || "Profile"}</span>
               </Button>
             </div>
           </div>
@@ -129,7 +163,7 @@ const StudentDashboard = ({ onAddCourse }) => {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                My Ongoing Courses ({ongoingCourses.length})
+                My Ongoing Courses ({summary.ongoingCourses.length})
               </button>
               <button
                 onClick={() => setActiveTab("completed")}
@@ -139,7 +173,7 @@ const StudentDashboard = ({ onAddCourse }) => {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Completed Courses ({completedCourses.length})
+                Completed Courses ({summary.completedCourses.length})
               </button>
             </nav>
           </div>
@@ -148,7 +182,7 @@ const StudentDashboard = ({ onAddCourse }) => {
             {/* Ongoing Courses */}
             {activeTab === "ongoing" && (
               <div className="space-y-6">
-                {ongoingCourses.map((course) => (
+                {summary.ongoingCourses.map((course) => (
                   <div key={course.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -177,7 +211,10 @@ const StudentDashboard = ({ onAddCourse }) => {
                       </div>
                     </div>
 
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                   <button
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
                       Continue Learning
                     </button>
                   </div>
@@ -188,7 +225,7 @@ const StudentDashboard = ({ onAddCourse }) => {
             {/* Completed Courses */}
             {activeTab === "completed" && (
               <div className="space-y-4">
-                {completedCourses.map((course) => (
+                {summary.completedCourses.map((course) => (
                   <div key={course.id} className="border border-gray-200 rounded-lg p-6 bg-green-50">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
