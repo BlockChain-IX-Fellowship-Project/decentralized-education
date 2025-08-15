@@ -2,10 +2,14 @@
 import React, { useState } from 'react';
 import { verifyCertificate } from '../utils/verifyCertificate';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { useLocation } from "react-router-dom";
 
 export default function CertificateVerifier() {
-  const [walletAddress, setWalletAddress] = useState('');
-  const [courseId, setCourseId] = useState('');
+  const location = useLocation();
+  const { courseId: stateCourseId, walletAddress: stateWalletAddress } = location.state || {};
+
+  const [walletAddress, setWalletAddress] = useState(stateWalletAddress || '');
+  const [courseId, setCourseId] = useState(stateCourseId || '');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
