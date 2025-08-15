@@ -80,6 +80,7 @@ export default function ProfilePage() {
           instructor: c.courseId?.instructor || '',
           tokensEarned: undefined,
           certificateUrl: c.downloadUrl || (c.ipfsHash ? `https://gateway.pinata.cloud/ipfs/${c.ipfsHash}` : ''),
+          courseId: c.courseId?._id || c.courseId 
         }))
         if (mapped.length > 0) setCertificates(mapped)
       } catch (_) { /* ignore */ }
@@ -302,7 +303,7 @@ export default function ProfilePage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => navigate('/verify-certificate', {
-                                  state: { courseId: cert.id, walletAddress: account }
+                                  state: { courseId: cert.courseId , walletAddress: account }
                                 })}
                               >
                                 Verify on Blockchain
