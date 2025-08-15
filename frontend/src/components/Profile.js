@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
@@ -8,51 +8,88 @@ import { Badge } from "./ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Separator } from "./ui/separator"
 import { Input } from "./ui/input"
+import { useWeb3Context } from "./hooks/Web3Context"
+import { getUserByWallet, createOrUpdateUser, getUserCertificates } from "../utils/userApi"
+import { getDashboardSummary } from "../utils/dashboardApi"
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+  const { account } = useWeb3Context()
   const [isEditing, setIsEditing] = useState(false)
   const [profileImage, setProfileImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
 
   const [userProfile, setUserProfile] = useState({
-    name: "Liza Maharjan",
-    email: "leeza.mhr@gmail.com",
-    bio: "Passionate blockchain enthusiast and lifelong learner. Currently exploring the intersection of decentralized finance and traditional banking systems. Love building innovative solutions that can make a real impact.",
-    totalTokens: 550,
-    coursesCompleted: 1,
-    coursesInProgress: 2,
+    name: "",
+    email: "",
+    bio: "",
+    totalTokens: 0,
+    coursesCompleted: 0,
+    coursesInProgress: 0,
   })
 
   const [editForm, setEditForm] = useState({
-    name: userProfile.name,
-    email: userProfile.email,
-    bio: userProfile.bio,
+    name: "",
+    email: "",
+    bio: "",
   })
 
-  const certificates = [
-    {
-      id: 1,
-      courseName: "Blockchain Basics",
-      issueDate: "2024-01-15",
-      instructor: "Alex Chen",
-      tokensEarned: 100,
-      certificateUrl: "https://youtu.be/dQw4w9WgXcQ?si=oITNoy8hT0w2EB90", // Add your PDF link here
-    },
-  ]
+  useEffect(() => {
+    async function loadProfile() {
+      if (!account) return
+      // 1) Load user profile first (do not let other requests override this)
+      try {
+        const user = await getUserByWallet(account)
+        setUserProfile((prev) => ({
+          ...prev,
+          name: user?.name || "",
+          email: user?.email || "",
+          bio: user?.bio || "",
+        }))
+        setEditForm({
+          name: user?.name || "",
+          email: user?.email || "",
+          bio: user?.bio || "",
+        })
+      } catch (e) {
+        const shortAddr = `${account.slice(0, 6)}...${account.slice(-4)}`
+        setUserProfile((prev) => ({ ...prev, name: shortAddr, email: "" }))
+        setEditForm({ name: shortAddr, email: "", bio: "" })
+      }
 
-  const completedCourses = [
-    {
-      id: 1,
-      title: "Blockchain Basics",
-      description: "Introduction to blockchain concepts",
-      instructor: "Alex Chen",
-      completedDate: "2024-01-15",
-      tokensEarned: 100,
-      certificateEarned: true,
-    },
-  ]
+      // 2) Load dashboard summary (errors here should not affect name/email display)
+      try {
+        const summary = await getDashboardSummary(account)
+        setUserProfile(prev => ({
+          ...prev,
+          totalTokens: summary?.totalTokens || 0,
+          coursesCompleted: (summary?.completedCourses || []).length,
+          coursesInProgress: (summary?.ongoingCourses || []).length,
+        }))
+        setCompletedCourses(summary?.completedCourses || [])
+      } catch (_) { /* ignore */ }
+
+      // 3) Load user certificates (ignore errors)
+      try {
+        const certs = await getUserCertificates(account)
+        const mapped = certs.map(c => ({
+          id: c._id,
+          courseName: c.courseId?.title || 'Course',
+          issueDate: c.issueDate ? new Date(c.issueDate).toISOString().slice(0,10) : '',
+          instructor: c.courseId?.instructor || '',
+          tokensEarned: undefined,
+          certificateUrl: c.downloadUrl || (c.ipfsHash ? `https://gateway.pinata.cloud/ipfs/${c.ipfsHash}` : ''),
+        }))
+        if (mapped.length > 0) setCertificates(mapped)
+      } catch (_) { /* ignore */ }
+    }
+    loadProfile()
+  }, [account])
+
+  const [certificates, setCertificates] = useState([])
+
+  const [completedCourses, setCompletedCourses] = useState([])
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0]
@@ -75,12 +112,20 @@ export default function ProfilePage() {
     })
   }
 
-  const handleSave = () => {
-    setUserProfile({
-      ...userProfile,
-      ...editForm,
-    })
-    setIsEditing(false)
+  const handleSave = async () => {
+    try {
+      const walletAddress = account
+      if (walletAddress) {
+        await createOrUpdateUser({ walletAddress, name: editForm.name, email: editForm.email, bio: editForm.bio })
+      }
+      setUserProfile({
+        ...userProfile,
+        ...editForm,
+      })
+      setIsEditing(false)
+    } catch (e) {
+      // no-op
+    }
   }
 
   const handleCancel = () => {
@@ -245,15 +290,22 @@ export default function ProfilePage() {
                              <h4 className="font-semibold text-lg">{cert.courseName}</h4>
                              <p className="text-sm text-gray-600">Instructor: {cert.instructor}</p>
                            </div>
-                                                     <div className="text-right">
-                             <Button 
-                               size="sm" 
-                               className="bg-green-600 hover:bg-green-700 text-white"
-                               onClick={() => window.open(cert.certificateUrl || '#', '_blank')}
-                             >
-                               View Certificate
-                             </Button>
-                           </div>
+                            <div className="text-right flex gap-2">
+                              <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => window.open(cert.certificateUrl || '#', '_blank')}
+                              >
+                                View Certificate
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigate('/verify')}
+                              >
+                                Verify on Blockchain
+                              </Button>
+                            </div>
                         </div>
                       </div>
                     ))}

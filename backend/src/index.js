@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import sectionRoutes from './routes/sectionRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 import vdoUpload from './routes/vdoUpload.js';
 import certificateRoutes from './routes/certificateRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -27,6 +28,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 app.use('/api/courses', courseRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/upload', vdoUpload); 
 app.use('/api/sections',sectionRoutes);
 app.use('/api/certificates', certificateRoutes);

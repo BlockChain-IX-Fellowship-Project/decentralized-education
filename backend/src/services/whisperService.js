@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import axios from 'axios';
 import fs from 'fs';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
@@ -45,10 +46,21 @@ export async function downloadMp4FromIPFS(ipfsHash) {
 export async function extractTranscript(videoPath, ipfsHash) {
   return new Promise((resolve, reject) => {
     const pyScriptPath = path.join(__dirname, '../extract_transcript.py');
-    const venvPython = path.join(__dirname, '../../whisper-venv/bin/python');
+    const venvDir = path.join(__dirname, '../../whisper-venv');
+    const venvPython = process.env.WHISPER_PYTHON || path.join(
+      venvDir,
+      process.platform === 'win32' ? 'Scripts' : 'bin',
+      process.platform === 'win32' ? 'python.exe' : 'python'
+    );
+    const pythonExecutable = fs.existsSync(venvPython)
+      ? venvPython
+      : (process.env.WHISPER_PYTHON || 'python');
     // Use a unique transcript output path for each video
     const transcriptPath = `${process.cwd()}/uploads/${ipfsHash}_transcript.txt`;
-    const py = spawn(venvPython, [pyScriptPath, videoPath, transcriptPath]);
+    // Ensure ffmpeg is available to the Python process even if not installed system-wide
+    const ffmpegBinDir = path.dirname(ffmpegInstaller.path);
+    const env = { ...process.env, PATH: `${ffmpegBinDir}${path.delimiter}${process.env.PATH || ''}` };
+    const py = spawn(pythonExecutable, [pyScriptPath, videoPath, transcriptPath], { env });
     let transcript = '';
     let error = '';
     py.stdout.on('data', (data) => {
