@@ -23,12 +23,12 @@ export default function Header() {
             >
               Courses
             </a>
-            <a
+            <Link
               to="/about"
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
               About
-            </a>
+            </Link>
             <a
               href="#"
               className="text-gray-700 hover:text-blue-600 transition-colors"
