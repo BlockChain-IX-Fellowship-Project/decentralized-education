@@ -64,7 +64,10 @@ export async function extractTranscript(videoPath, ipfsHash) {
     let transcript = '';
     let error = '';
     py.stdout.on('data', (data) => {
+      console.log('data: ',data)
+      console.log(`Whisper-data: ${data.toString()}`);
       transcript += data.toString();
+      console.log(`Whisper output: ${transcript}`);
     });
     py.stderr.on('data', (data) => {
       error += data.toString();
