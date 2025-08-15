@@ -3,3 +3,8 @@ MONGO_URI=mongodb://localhost:27017/decedu
 .env
 whisper-venv/
 uploads/
+venv/
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
